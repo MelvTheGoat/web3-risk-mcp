@@ -78,3 +78,13 @@ async def test_wallet_profile_through_mcp(connect):
         assert not result.is_error
         assert result.structured_content["address"] == ME
         assert result.structured_content["native_symbol"] == "ETH"
+
+
+async def test_scoring_method_resource(connect):
+    async with connect() as client:
+        resources = (await client.list_resources()).resources
+        assert [str(r.uri) for r in resources] == ["risk://scoring-method"]
+        result = await client.read_resource("risk://scoring-method")
+        text = result.contents[0].text
+        assert text.startswith("# How the risk score works")
+        assert "`token.honeypot`" in text

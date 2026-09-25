@@ -22,12 +22,15 @@ from pydantic import BaseModel, Field
 
 from web3_risk_mcp import __version__
 from web3_risk_mcp.analysis.contract import inspect_contract as contract_inspect
+from web3_risk_mcp.analysis.score import RiskScore
+from web3_risk_mcp.analysis.score import score_risk as risk_score
 from web3_risk_mcp.analysis.token import check_token_risk as token_risk
 from web3_risk_mcp.analysis.trace import trace_funds as funds_trace
 from web3_risk_mcp.analysis.wallet import get_wallet_profile as wallet_profile
 from web3_risk_mcp.chains import CHAINS, Chain, get_chain, normalize_address
 from web3_risk_mcp.config import get_settings
 from web3_risk_mcp.errors import InvalidInputError
+from web3_risk_mcp.method import scoring_method_markdown
 from web3_risk_mcp.models import ContractReport, FundTrace, TokenRiskReport, WalletProfile
 from web3_risk_mcp.services import Services
 
@@ -96,6 +99,24 @@ def create_server(services_factory: Callable[[], Services] | None = None) -> MCP
         version=__version__,
         lifespan=lifespan,
     )
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def score_risk(
+        address: AddressArg,
+        ctx: Context,
+        chain: ChainArg = "ethereum",
+        include_trace: Annotated[
+            bool, Field(description="Also trace funds one hop out (wallets only). Slower.")
+        ] = True,
+    ) -> RiskScore:
+        """Give an address a 0-100 risk score with a reason for every point.
+
+        Works for wallets, tokens, and other contracts: it detects the type and runs
+        the matching checks. The result lists each finding, its points, and its source,
+        plus a confidence level and anything that could not be checked.
+        """
+        addr, ch = _parse(address, chain)
+        return await risk_score(_services(ctx), ch, addr, include_trace=include_trace)
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_wallet_profile(
@@ -167,5 +188,15 @@ def create_server(services_factory: Callable[[], Services] | None = None) -> MCP
                 for c in CHAINS.values()
             ]
         )
+
+    @mcp.resource(
+        "risk://scoring-method",
+        name="scoring-method",
+        title="How the risk score works",
+        description="The rules, points, and limits behind score_risk.",
+        mime_type="text/markdown",
+    )
+    def scoring_method() -> str:
+        return scoring_method_markdown()
 
     return mcp
