@@ -101,3 +101,86 @@ class WalletProfile(Report):
     activity: ActivityPattern | None = None
     top_counterparties: list[Counterparty] = Field(default_factory=list)
     recent_tokens: list[TokenActivity] = Field(default_factory=list)
+
+
+# --- Token -------------------------------------------------------------------
+
+
+class TokenPowers(BaseModel):
+    """Special powers written into the token contract. None means unknown."""
+
+    can_mint: bool | None = Field(None, description="Someone can create new tokens.")
+    can_blacklist: bool | None = Field(None, description="Someone can block wallets from trading.")
+    can_pause_transfers: bool | None = None
+    owner_can_change_balances: bool | None = None
+    has_hidden_owner: bool | None = None
+    can_take_back_ownership: bool | None = None
+    can_self_destruct: bool | None = None
+    has_whitelist: bool | None = None
+    has_trading_cooldown: bool | None = None
+    tax_can_change: bool | None = None
+    per_wallet_tax_can_change: bool | None = None
+
+
+class TaxInfo(BaseModel):
+    """Fees charged on each trade, in percent. 10 means 10%."""
+
+    buy_tax_pct: float | None = None
+    sell_tax_pct: float | None = None
+    transfer_tax_pct: float | None = None
+
+
+class Holder(BaseModel):
+    address: str
+    percent: float
+    is_contract: bool | None = None
+    is_locked: bool | None = None
+    tag: str | None = None
+    excluded_from_concentration: str | None = Field(
+        None, description="Why this holder does not count toward concentration, if it does not."
+    )
+
+
+class LiquidityPool(BaseModel):
+    dex: str
+    pair_address: str
+    paired_with: str | None = None
+    liquidity_usd: float | None = None
+    volume_24h_usd: float | None = None
+    buys_24h: int | None = None
+    sells_24h: int | None = None
+    created_at: datetime | None = None
+    age_days: float | None = None
+    url: str | None = None
+
+
+class TokenRiskReport(Report):
+    name: str | None = None
+    symbol: str | None = None
+    holder_count: int | None = None
+    is_honeypot: bool | None = Field(
+        None, description="True if the token can be bought but not sold."
+    )
+    is_open_source: bool | None = None
+    is_proxy: bool | None = None
+    owner_address: str | None = None
+    owner_renounced: bool | None = Field(
+        None, description="True if the owner gave up control by setting it to a dead address."
+    )
+    creator_address: str | None = None
+    powers: TokenPowers = Field(default_factory=TokenPowers)
+    taxes: TaxInfo = Field(default_factory=TaxInfo)
+    top_holders: list[Holder] = Field(default_factory=list)
+    top10_holder_pct: float | None = Field(
+        None,
+        description="Top 10 wallets' share, not counting burn, locked, or pool addresses.",
+    )
+    owner_pct: float | None = None
+    creator_pct: float | None = None
+    liquidity_usd: float | None = None
+    lp_locked_pct: float | None = Field(
+        None,
+        description="Share of pool (LP) tokens locked or burned, so liquidity cannot be pulled.",
+    )
+    pools: list[LiquidityPool] = Field(default_factory=list)
+    on_trust_list: bool | None = None

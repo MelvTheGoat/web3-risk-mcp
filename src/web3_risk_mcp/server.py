@@ -21,11 +21,12 @@ from mcp_types import ToolAnnotations
 from pydantic import BaseModel, Field
 
 from web3_risk_mcp import __version__
+from web3_risk_mcp.analysis.token import check_token_risk as token_risk
 from web3_risk_mcp.analysis.wallet import get_wallet_profile as wallet_profile
 from web3_risk_mcp.chains import CHAINS, Chain, get_chain, normalize_address
 from web3_risk_mcp.config import get_settings
 from web3_risk_mcp.errors import InvalidInputError
-from web3_risk_mcp.models import WalletProfile
+from web3_risk_mcp.models import TokenRiskReport, WalletProfile
 from web3_risk_mcp.services import Services
 
 INSTRUCTIONS = """\
@@ -103,6 +104,17 @@ def create_server(services_factory: Callable[[], Services] | None = None) -> MCP
         """
         addr, ch = _parse(address, chain)
         return await wallet_profile(_services(ctx), ch, addr)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def check_token_risk(
+        token_address: AddressArg, ctx: Context, chain: ChainArg = "ethereum"
+    ) -> TokenRiskReport:
+        """Check an ERC-20 token for scam signs before buying it: honeypot (cannot sell),
+        mint, blacklist, and pause powers, buy/sell tax, owner and holder concentration,
+        liquidity size, and whether liquidity is locked.
+        """
+        addr, ch = _parse(token_address, chain)
+        return await token_risk(_services(ctx), ch, addr)
 
     @mcp.tool(annotations=READ_ONLY)
     def list_supported_chains() -> ChainList:
