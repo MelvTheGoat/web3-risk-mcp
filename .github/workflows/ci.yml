@@ -29,3 +29,17 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -q
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t web3-risk-mcp .
+
+      - name: Check the server starts over stdio
+        run: |
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+            | timeout 20 docker run -i --rm web3-risk-mcp --transport stdio \
+            | grep -q '"serverInfo"'
