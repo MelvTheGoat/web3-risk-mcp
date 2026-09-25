@@ -32,6 +32,7 @@ from web3_risk_mcp.config import get_settings
 from web3_risk_mcp.errors import InvalidInputError
 from web3_risk_mcp.method import scoring_method_markdown
 from web3_risk_mcp.models import ContractReport, FundTrace, TokenRiskReport, WalletProfile
+from web3_risk_mcp.prompts import investigation_prompt
 from web3_risk_mcp.services import Services
 
 INSTRUCTIONS = """\
@@ -188,6 +189,13 @@ def create_server(services_factory: Callable[[], Services] | None = None) -> MCP
                 for c in CHAINS.values()
             ]
         )
+
+    @mcp.prompt(
+        title="Investigate an address",
+        description="A step-by-step risk investigation of a wallet, token, or contract.",
+    )
+    def investigate_address(address: str, chain: str = "ethereum", user_goal: str = "") -> str:
+        return investigation_prompt(address, chain, user_goal)
 
     @mcp.resource(
         "risk://scoring-method",

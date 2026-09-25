@@ -88,3 +88,19 @@ async def test_scoring_method_resource(connect):
         text = result.contents[0].text
         assert text.startswith("# How the risk score works")
         assert "`token.honeypot`" in text
+
+
+async def test_investigate_address_prompt(connect):
+    async with connect() as client:
+        prompts = (await client.list_prompts()).prompts
+        assert [p.name for p in prompts] == ["investigate_address"]
+        result = await client.get_prompt(
+            "investigate_address",
+            {"address": ME, "chain": "base", "user_goal": "buy this token"},
+        )
+        text = result.messages[0].content.text
+        assert ME in text
+        assert "Chain: base" in text
+        assert "buy this token" in text
+        assert "score_risk" in text
+        assert "private key" in text
