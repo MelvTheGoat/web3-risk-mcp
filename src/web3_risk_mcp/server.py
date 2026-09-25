@@ -21,12 +21,13 @@ from mcp_types import ToolAnnotations
 from pydantic import BaseModel, Field
 
 from web3_risk_mcp import __version__
+from web3_risk_mcp.analysis.contract import inspect_contract as contract_inspect
 from web3_risk_mcp.analysis.token import check_token_risk as token_risk
 from web3_risk_mcp.analysis.wallet import get_wallet_profile as wallet_profile
 from web3_risk_mcp.chains import CHAINS, Chain, get_chain, normalize_address
 from web3_risk_mcp.config import get_settings
 from web3_risk_mcp.errors import InvalidInputError
-from web3_risk_mcp.models import TokenRiskReport, WalletProfile
+from web3_risk_mcp.models import ContractReport, TokenRiskReport, WalletProfile
 from web3_risk_mcp.services import Services
 
 INSTRUCTIONS = """\
@@ -115,6 +116,17 @@ def create_server(services_factory: Callable[[], Services] | None = None) -> MCP
         """
         addr, ch = _parse(token_address, chain)
         return await token_risk(_services(ctx), ch, addr)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def inspect_contract(
+        contract_address: AddressArg, ctx: Context, chain: ChainArg = "ethereum"
+    ) -> ContractReport:
+        """Inspect a smart contract: is the source verified, is it an upgradeable proxy,
+        who owns or controls it (wallet, multisig, or renounced), and a plain-English
+        summary of risky functions such as mint, blacklist, pause, and fee changes.
+        """
+        addr, ch = _parse(contract_address, chain)
+        return await contract_inspect(_services(ctx), ch, addr)
 
     @mcp.tool(annotations=READ_ONLY)
     def list_supported_chains() -> ChainList:

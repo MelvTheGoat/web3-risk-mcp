@@ -31,7 +31,12 @@ def connect(settings):
 async def test_tools_are_listed_and_marked_read_only(connect):
     async with connect() as client:
         tools = {t.name: t for t in (await client.list_tools()).tools}
-        assert {"get_wallet_profile", "check_token_risk", "list_supported_chains"} <= set(tools)
+        assert {
+            "get_wallet_profile",
+            "check_token_risk",
+            "inspect_contract",
+            "list_supported_chains",
+        } <= set(tools)
         for tool in tools.values():
             assert tool.annotations.read_only_hint is True
             assert tool.description

@@ -184,3 +184,50 @@ class TokenRiskReport(Report):
     )
     pools: list[LiquidityPool] = Field(default_factory=list)
     on_trust_list: bool | None = None
+
+
+# --- Contract ----------------------------------------------------------------
+
+
+class RiskyFunction(BaseModel):
+    name: str
+    category: str
+    severity: Severity
+    explanation: str
+    found_by: Literal["verified source", "bytecode scan"]
+
+
+class ProxyInfo(BaseModel):
+    """A proxy is a contract that forwards calls to another "implementation"
+    contract. Whoever controls the proxy can swap the implementation, which
+    means they can change what the contract does."""
+
+    is_proxy: bool = False
+    implementation: str | None = None
+    admin: str | None = None
+    admin_controlled_by: str | None = None
+    implementation_verified: bool | None = None
+
+
+class Controller(BaseModel):
+    """Who controls a contract, and what kind of account that is."""
+
+    address: str | None = None
+    kind: Literal["none", "renounced", "wallet", "multisig", "contract", "unknown"] = "unknown"
+    multisig_threshold: int | None = Field(None, description="Signatures needed, for a multisig.")
+
+
+class ContractReport(Report):
+    is_contract: bool | None = None
+    verified: bool | None = None
+    contract_name: str | None = None
+    compiler_version: str | None = None
+    license: str | None = None
+    bytecode_size_bytes: int | None = None
+    creator: str | None = None
+    creation_tx: str | None = None
+    created_at: datetime | None = None
+    owner: Controller = Field(default_factory=Controller)
+    proxy: ProxyInfo = Field(default_factory=ProxyInfo)
+    risky_functions: list[RiskyFunction] = Field(default_factory=list)
+    summary: str = ""
