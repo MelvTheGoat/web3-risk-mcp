@@ -13,7 +13,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Literal
 
 from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
@@ -23,11 +23,12 @@ from pydantic import BaseModel, Field
 from web3_risk_mcp import __version__
 from web3_risk_mcp.analysis.contract import inspect_contract as contract_inspect
 from web3_risk_mcp.analysis.token import check_token_risk as token_risk
+from web3_risk_mcp.analysis.trace import trace_funds as funds_trace
 from web3_risk_mcp.analysis.wallet import get_wallet_profile as wallet_profile
 from web3_risk_mcp.chains import CHAINS, Chain, get_chain, normalize_address
 from web3_risk_mcp.config import get_settings
 from web3_risk_mcp.errors import InvalidInputError
-from web3_risk_mcp.models import ContractReport, TokenRiskReport, WalletProfile
+from web3_risk_mcp.models import ContractReport, FundTrace, TokenRiskReport, WalletProfile
 from web3_risk_mcp.services import Services
 
 INSTRUCTIONS = """\
@@ -127,6 +128,28 @@ def create_server(services_factory: Callable[[], Services] | None = None) -> MCP
         """
         addr, ch = _parse(contract_address, chain)
         return await contract_inspect(_services(ctx), ch, addr)
+
+    @mcp.tool(annotations=READ_ONLY)
+    async def trace_funds(
+        address: AddressArg,
+        ctx: Context,
+        chain: ChainArg = "ethereum",
+        hops: Annotated[int, Field(ge=1, le=2, description="How far to follow: 1 or 2.")] = 1,
+        direction: Annotated[
+            Literal["in", "out", "both"],
+            Field(description="in = where money came from, out = where it went."),
+        ] = "both",
+        max_per_hop: Annotated[
+            int, Field(ge=1, le=10, description="How many counterparties to follow per step.")
+        ] = 5,
+    ) -> FundTrace:
+        """Follow money in and out of an address for 1 or 2 hops and flag links to
+        known risky addresses such as mixers, sanctioned wallets, and exploiters.
+        """
+        addr, ch = _parse(address, chain)
+        return await funds_trace(
+            _services(ctx), ch, addr, hops=hops, direction=direction, max_per_hop=max_per_hop
+        )
 
     @mcp.tool(annotations=READ_ONLY)
     def list_supported_chains() -> ChainList:

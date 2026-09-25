@@ -231,3 +231,44 @@ class ContractReport(Report):
     proxy: ProxyInfo = Field(default_factory=ProxyInfo)
     risky_functions: list[RiskyFunction] = Field(default_factory=list)
     summary: str = ""
+
+
+# --- Fund tracing ------------------------------------------------------------
+
+
+class FlowEdge(BaseModel):
+    """Money that moved between two addresses in the sampled history."""
+
+    from_address: str
+    to_address: str
+    transfers: int = Field(description="Number of transfers that carried value.")
+    native_value: float = Field(description="Native coin moved, in whole coins.")
+    token_transfers: int = 0
+    hop: int
+
+
+class TraceNode(BaseModel):
+    address: str
+    hop: int
+    label: str | None = None
+    label_category: str | None = None
+    security_flags: list[str] = Field(default_factory=list)
+    expanded: bool = False
+    note: str | None = None
+
+
+class RiskyLink(BaseModel):
+    address: str
+    hop: int
+    relation: str = Field(description="How it connects, e.g. 'sent funds to the address'.")
+    reason: str
+    path: list[str] = Field(description="Addresses from the start address to this one.")
+
+
+class FundTrace(Report):
+    native_symbol: str
+    hops: int
+    direction: Literal["in", "out", "both"]
+    nodes: list[TraceNode] = Field(default_factory=list)
+    edges: list[FlowEdge] = Field(default_factory=list)
+    risky_links: list[RiskyLink] = Field(default_factory=list)
