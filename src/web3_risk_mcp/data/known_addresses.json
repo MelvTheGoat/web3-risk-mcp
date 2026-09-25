@@ -1,0 +1,20 @@
+{
+  "_about": "A small, hand-checked list of well-known addresses. Each entry was checked against public explorer labels and incident reports. It is a starting point, not a full blocklist; GoPlus covers far more addresses. 'chains' lists where the label applies, or ['*'] for every chain.",
+  "addresses": [
+    {"address": "0xd90e2f925da726b50c4ed8d0fb90ad053324f31b", "chains": ["ethereum"], "name": "Tornado Cash: Router", "category": "mixer", "note": "A mixer hides where funds came from. Tornado Cash was sanctioned by the US in 2022 and delisted in 2025, but links to it are still a common money-laundering signal."},
+    {"address": "0x12d66f87a04a9e220743712ce6d9bb1b5616b8fc", "chains": ["ethereum"], "name": "Tornado Cash: 0.1 ETH pool", "category": "mixer"},
+    {"address": "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936", "chains": ["ethereum"], "name": "Tornado Cash: 1 ETH pool", "category": "mixer"},
+    {"address": "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf", "chains": ["ethereum"], "name": "Tornado Cash: 10 ETH pool", "category": "mixer"},
+    {"address": "0xa160cdab225685da1d56aa342ad8841c3b53f291", "chains": ["ethereum"], "name": "Tornado Cash: 100 ETH pool", "category": "mixer"},
+    {"address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96", "chains": ["ethereum"], "name": "Ronin Bridge Exploiter", "category": "sanctioned", "note": "Used in the 2022 Ronin bridge hack. On the US OFAC sanctions list."},
+    {"address": "0x47666fab8bd0ac7003bce3f5c3585383f09486e2", "chains": ["ethereum"], "name": "Bybit Exploiter 1", "category": "exploit", "note": "First address to receive funds stolen from Bybit in February 2025."},
+    {"address": "0xb66cd966670d962c227b3eaba30a872dbfb995db", "chains": ["ethereum"], "name": "Euler Finance Exploiter 2", "category": "exploit", "note": "Used in the March 2023 Euler Finance flash-loan attack. Most funds were later returned."},
+    {"address": "0x629e7da20197a5429d30da36e77d06cdf796b71a", "chains": ["ethereum"], "name": "Wormhole Network Exploiter", "category": "exploit", "note": "Received funds from the February 2022 Wormhole bridge hack."},
+    {"address": "0x0000000000000000000000000000000000000000", "chains": ["*"], "name": "Null address", "category": "burn", "note": "Tokens sent here can never be moved. Often used to burn tokens or LP tokens."},
+    {"address": "0x000000000000000000000000000000000000dead", "chains": ["*"], "name": "Dead address", "category": "burn", "note": "A common burn address. Nobody holds its key."},
+    {"address": "0x28c6c06298d514db089934071355e5743bf21d60", "chains": ["ethereum"], "name": "Binance 14", "category": "exchange"},
+    {"address": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", "chains": ["ethereum"], "name": "Uniswap V2: Router 2", "category": "protocol"},
+    {"address": "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad", "chains": ["ethereum"], "name": "Uniswap: Universal Router", "category": "protocol"},
+    {"address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", "chains": ["ethereum"], "name": "Wrapped Ether (WETH)", "category": "protocol"}
+  ]
+}
