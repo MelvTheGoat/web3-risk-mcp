@@ -236,7 +236,10 @@ class HttpSource:
                         f"{error.message} Gave up after {attempt + 1} tries.",
                         retryable=True,
                     )
-                logger.warning("%s request failed: %s %s", self.name, url, redact(params))
+                # Retryable errors that ran out of tries are worth a warning. Others,
+                # like a contract call that reverts, are often expected.
+                log = logger.warning if error.retryable else logger.debug
+                log("%s request failed: %s %s: %s", self.name, url, redact(params), error.message)
                 raise error
 
             delay = retry_after if retry_after is not None else self._backoff(attempt)
