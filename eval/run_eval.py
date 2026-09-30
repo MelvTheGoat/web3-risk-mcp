@@ -99,7 +99,7 @@ def _markdown(runs: dict[str, dict], mode: str) -> str:
         "# Evaluation results",
         "",
         f"Generated {datetime.now(UTC):%Y-%m-%d} with web3-risk-mcp {__version__} "
-        f"({mode} data). An address is flagged as risky when its score is {THRESHOLD} or more.",
+        f"({mode}). An address is flagged as risky when its score is {THRESHOLD} or more.",
         "",
         "| Metric | Full scorer | Without local address list |",
         "|---|---:|---:|",
@@ -148,7 +148,9 @@ async def main() -> None:
     elif args.replay:
         transport = ReplayTransport(cassette)
         settings = settings.model_copy(update={"http_max_retries": 0})
-    mode = "replayed" if args.replay else "live"
+    mode = (
+        "live responses recorded in eval/fixtures, replayed offline" if args.replay else "live data"
+    )
 
     async with httpx.AsyncClient(
         transport=transport, timeout=settings.http_timeout_seconds

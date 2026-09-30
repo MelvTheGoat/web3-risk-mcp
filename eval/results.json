@@ -19,7 +19,7 @@
           "token.tax_modifiable (+15)"
         ],
         "failed_sources": [],
-        "seconds": 2.4
+        "seconds": 2.0
       },
       {
         "label": "risky",
@@ -77,7 +77,7 @@
           "wallet.established (-10)"
         ],
         "failed_sources": [],
-        "seconds": 12.3
+        "seconds": 12.0
       },
       {
         "label": "risky",
@@ -96,7 +96,7 @@
           "wallet.established (-10)"
         ],
         "failed_sources": [],
-        "seconds": 9.8
+        "seconds": 10.0
       },
       {
         "label": "risky",
@@ -105,17 +105,17 @@
         "address": "0x4de23f3f0fb3318287378adbde030cf61714b2f3",
         "name": "Fake_Phishing7459364",
         "source": "Etherscan label: https://etherscan.io/address/0x4de23f3f0fb3318287378adbde030cf61714b2f3",
-        "score": 100,
+        "score": 80,
         "level": "critical",
         "confidence": "high",
-        "address_type": "contract",
+        "address_type": "wallet",
         "top_reasons": [
           "address.phishing_activities (+70)",
-          "contract.unverified (+25)",
-          "address.blacklist_doubt (+20)"
+          "address.blacklist_doubt (+20)",
+          "wallet.established (-10)"
         ],
         "failed_sources": [],
-        "seconds": 4.1
+        "seconds": 12.0
       },
       {
         "label": "risky",
@@ -136,7 +136,7 @@
           "address.blacklist_doubt (+20)"
         ],
         "failed_sources": [],
-        "seconds": 14.1
+        "seconds": 14.0
       },
       {
         "label": "risky",
@@ -156,7 +156,7 @@
           "address.blacklist_doubt (+20)"
         ],
         "failed_sources": [],
-        "seconds": 11.8
+        "seconds": 12.0
       },
       {
         "label": "risky",
@@ -175,7 +175,7 @@
           "wallet.risky_counterparty (+25)"
         ],
         "failed_sources": [],
-        "seconds": 10.6
+        "seconds": 10.0
       },
       {
         "label": "risky",
@@ -194,7 +194,7 @@
           "trace.direct.mixer (+30)"
         ],
         "failed_sources": [],
-        "seconds": 13.9
+        "seconds": 12.0
       },
       {
         "label": "risky",
@@ -214,7 +214,7 @@
           "contract.upgradeable (+8)"
         ],
         "failed_sources": [],
-        "seconds": 2.1
+        "seconds": 2.0
       },
       {
         "label": "risky",
@@ -234,7 +234,7 @@
           "contract.upgradeable (+8)"
         ],
         "failed_sources": [],
-        "seconds": 3.8
+        "seconds": 4.0
       },
       {
         "label": "safe",
@@ -243,15 +243,14 @@
         "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "name": "USDC",
         "source": "Circle",
-        "score": 34,
-        "level": "medium",
+        "score": 0,
+        "level": "low",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
           "token.trusted (-40)",
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [],
         "seconds": 4.0
@@ -263,8 +262,8 @@
         "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "name": "USDT",
         "source": "Tether",
-        "score": 78,
-        "level": "critical",
+        "score": 68,
+        "level": "high",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
@@ -413,15 +412,14 @@
         "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
         "name": "USDC on Base",
         "source": "Circle",
-        "score": 34,
-        "level": "medium",
+        "score": 0,
+        "level": "low",
         "confidence": "medium",
         "address_type": "token",
         "top_reasons": [
           "token.trusted (-40)",
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [
           "Etherscan"
@@ -435,12 +433,11 @@
         "address": "0x4200000000000000000000000000000000000006",
         "name": "WETH on Base",
         "source": "Base system contract",
-        "score": 48,
-        "level": "medium",
+        "score": 8,
+        "level": "low",
         "confidence": "medium",
         "address_type": "token",
         "top_reasons": [
-          "address.honeypot_related_address (+40)",
           "token.high_concentration (+8)"
         ],
         "failed_sources": [
@@ -455,15 +452,13 @@
         "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "name": "USDC on Arbitrum",
         "source": "Circle",
-        "score": 74,
-        "level": "high",
+        "score": 30,
+        "level": "medium",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)",
-          "contract.fn.pause (+8)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [],
         "seconds": 4.0
@@ -494,15 +489,13 @@
         "address": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
         "name": "USDC on Polygon",
         "source": "Circle",
-        "score": 74,
-        "level": "high",
+        "score": 30,
+        "level": "medium",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)",
-          "contract.fn.pause (+8)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [],
         "seconds": 4.0
@@ -593,13 +586,11 @@
         "source": "Uniswap docs",
         "score": 0,
         "level": "low",
-        "confidence": "medium",
+        "confidence": "high",
         "address_type": "contract",
         "top_reasons": [],
-        "failed_sources": [
-          "GoPlus"
-        ],
-        "seconds": 10.0
+        "failed_sources": [],
+        "seconds": 4.0
       },
       {
         "label": "safe",
@@ -610,16 +601,14 @@
         "source": "Aave docs",
         "score": 16,
         "level": "low",
-        "confidence": "medium",
+        "confidence": "high",
         "address_type": "contract",
         "top_reasons": [
           "contract.fn.withdraw (+8)",
           "contract.upgradeable (+8)"
         ],
-        "failed_sources": [
-          "GoPlus"
-        ],
-        "seconds": 10.2
+        "failed_sources": [],
+        "seconds": 4.0
       },
       {
         "label": "safe",
@@ -628,15 +617,15 @@
         "address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
         "name": "vitalik.eth",
         "source": "Public ENS name",
-        "score": 25,
-        "level": "medium",
+        "score": 0,
+        "level": "low",
         "confidence": "high",
-        "address_type": "contract",
+        "address_type": "wallet",
         "top_reasons": [
-          "contract.unverified (+25)"
+          "wallet.established (-10)"
         ],
         "failed_sources": [],
-        "seconds": 4.1
+        "seconds": 10.0
       },
       {
         "label": "safe",
@@ -653,24 +642,24 @@
           "wallet.established (-10)"
         ],
         "failed_sources": [],
-        "seconds": 12.1
+        "seconds": 12.0
       }
     ],
     "metrics": {
       "risky_count": 12,
       "safe_count": 22,
-      "roc_auc": 0.951,
+      "roc_auc": 0.981,
       "threshold": 50,
       "true_positives": 11,
-      "false_positives": 3,
-      "true_negatives": 19,
+      "false_positives": 1,
+      "true_negatives": 21,
       "false_negatives": 1,
-      "precision": 0.786,
+      "precision": 0.917,
       "recall": 0.917,
-      "accuracy": 0.882,
-      "risky_mean": 83.8,
-      "risky_median": 95.0,
-      "safe_mean": 20.0,
+      "accuracy": 0.941,
+      "risky_mean": 82.2,
+      "risky_median": 85.0,
+      "safe_mean": 9.5,
       "safe_median": 0.0
     }
   },
@@ -715,7 +704,7 @@
         "failed_sources": [
           "Etherscan"
         ],
-        "seconds": 0.6
+        "seconds": 0.0
       },
       {
         "label": "risky",
@@ -733,7 +722,7 @@
           "address.blacklist_doubt (+20)"
         ],
         "failed_sources": [],
-        "seconds": 0.1
+        "seconds": 0.0
       },
       {
         "label": "risky",
@@ -780,14 +769,14 @@
         "address": "0x4de23f3f0fb3318287378adbde030cf61714b2f3",
         "name": "Fake_Phishing7459364",
         "source": "Etherscan label: https://etherscan.io/address/0x4de23f3f0fb3318287378adbde030cf61714b2f3",
-        "score": 100,
+        "score": 80,
         "level": "critical",
         "confidence": "high",
-        "address_type": "contract",
+        "address_type": "wallet",
         "top_reasons": [
           "address.phishing_activities (+70)",
-          "contract.unverified (+25)",
-          "address.blacklist_doubt (+20)"
+          "address.blacklist_doubt (+20)",
+          "wallet.established (-10)"
         ],
         "failed_sources": [],
         "seconds": 0.0
@@ -913,15 +902,14 @@
         "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
         "name": "USDC",
         "source": "Circle",
-        "score": 34,
-        "level": "medium",
+        "score": 0,
+        "level": "low",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
           "token.trusted (-40)",
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [],
         "seconds": 0.0
@@ -933,8 +921,8 @@
         "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "name": "USDT",
         "source": "Tether",
-        "score": 78,
-        "level": "critical",
+        "score": 68,
+        "level": "high",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
@@ -1083,20 +1071,19 @@
         "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
         "name": "USDC on Base",
         "source": "Circle",
-        "score": 34,
-        "level": "medium",
+        "score": 0,
+        "level": "low",
         "confidence": "medium",
         "address_type": "token",
         "top_reasons": [
           "token.trusted (-40)",
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [
           "Etherscan"
         ],
-        "seconds": 0.2
+        "seconds": 0.0
       },
       {
         "label": "safe",
@@ -1105,12 +1092,11 @@
         "address": "0x4200000000000000000000000000000000000006",
         "name": "WETH on Base",
         "source": "Base system contract",
-        "score": 48,
-        "level": "medium",
+        "score": 8,
+        "level": "low",
         "confidence": "medium",
         "address_type": "token",
         "top_reasons": [
-          "address.honeypot_related_address (+40)",
           "token.high_concentration (+8)"
         ],
         "failed_sources": [
@@ -1125,15 +1111,13 @@
         "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "name": "USDC on Arbitrum",
         "source": "Circle",
-        "score": 74,
-        "level": "high",
+        "score": 30,
+        "level": "medium",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)",
-          "contract.fn.pause (+8)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [],
         "seconds": 0.0
@@ -1155,7 +1139,7 @@
           "token.proxy (+10)"
         ],
         "failed_sources": [],
-        "seconds": 0.5
+        "seconds": 0.1
       },
       {
         "label": "safe",
@@ -1164,15 +1148,13 @@
         "address": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
         "name": "USDC on Polygon",
         "source": "Circle",
-        "score": 74,
-        "level": "high",
+        "score": 30,
+        "level": "medium",
         "confidence": "high",
         "address_type": "token",
         "top_reasons": [
           "contract.upgradeable_by_wallet (+20)",
-          "contract.fn.blacklist (+15)",
-          "contract.fn.mint (+15)",
-          "contract.fn.pause (+8)"
+          "contract.fn.blacklist (+10)"
         ],
         "failed_sources": [],
         "seconds": 0.0
@@ -1232,7 +1214,7 @@
         "failed_sources": [
           "Etherscan"
         ],
-        "seconds": 16.1
+        "seconds": 0.3
       },
       {
         "label": "safe",
@@ -1267,7 +1249,7 @@
         "address_type": "contract",
         "top_reasons": [],
         "failed_sources": [],
-        "seconds": 0.6
+        "seconds": 0.2
       },
       {
         "label": "safe",
@@ -1276,17 +1258,16 @@
         "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
         "name": "Aave V3 Pool",
         "source": "Aave docs",
-        "score": 38,
-        "level": "medium",
+        "score": 16,
+        "level": "low",
         "confidence": "high",
-        "address_type": "token",
+        "address_type": "contract",
         "top_reasons": [
-          "token.no_liquidity (+20)",
-          "token.proxy (+10)",
-          "contract.fn.withdraw (+8)"
+          "contract.fn.withdraw (+8)",
+          "contract.upgradeable (+8)"
         ],
         "failed_sources": [],
-        "seconds": 2.0
+        "seconds": 0.2
       },
       {
         "label": "safe",
@@ -1295,12 +1276,12 @@
         "address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
         "name": "vitalik.eth",
         "source": "Public ENS name",
-        "score": 25,
-        "level": "medium",
+        "score": 0,
+        "level": "low",
         "confidence": "high",
-        "address_type": "contract",
+        "address_type": "wallet",
         "top_reasons": [
-          "contract.unverified (+25)"
+          "wallet.established (-10)"
         ],
         "failed_sources": [],
         "seconds": 0.0
@@ -1326,18 +1307,18 @@
     "metrics": {
       "risky_count": 12,
       "safe_count": 22,
-      "roc_auc": 0.894,
+      "roc_auc": 0.958,
       "threshold": 50,
       "true_positives": 9,
-      "false_positives": 3,
-      "true_negatives": 19,
+      "false_positives": 1,
+      "true_negatives": 21,
       "false_negatives": 3,
-      "precision": 0.75,
+      "precision": 0.9,
       "recall": 0.75,
-      "accuracy": 0.824,
-      "risky_mean": 73,
+      "accuracy": 0.882,
+      "risky_mean": 71.3,
       "risky_median": 80.0,
-      "safe_mean": 21.0,
+      "safe_mean": 9.5,
       "safe_median": 0.0
     }
   }
