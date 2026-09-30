@@ -223,48 +223,67 @@ Things you can ask your assistant once the server is connected:
 - "Give me a risk score for `0x…` and explain every point."
 - Or pick the **investigate_address** prompt and paste an address.
 
-Below is real output from `score_risk` for a honeypot-style token. The data
-comes from the test fixtures (`tests/test_token.py`), so the address is a
-placeholder. The list is trimmed to the top 7 contributions.
+The outputs below are real. They come from the live evaluation run, and you
+can reproduce them offline from `eval/fixtures/`. Some fields are trimmed.
+
+**A honeypot token** (`0x43571a39…69be` on Ethereum, from a GoPlus case study):
 
 ```json
 {
   "score": 100,
   "level": "critical",
-  "verdict": "Very likely dangerous. Do not interact.",
   "confidence": "high",
   "address_type": "token",
   "contributions": [
-    { "finding_id": "token.honeypot", "points": 60, "counted": true,
-      "reason": "A test sale failed. Buyers of this token are likely unable to sell it.", "source": "GoPlus" },
-    { "finding_id": "token.extreme_sell_tax", "points": 45, "counted": true,
-      "reason": "Selling costs 99.0% of the amount. You would lose most of your money.", "source": "GoPlus" },
-    { "finding_id": "token.not_open_source", "points": 25, "counted": true,
-      "reason": "Nobody can read what this contract really does.", "source": "GoPlus" },
-    { "finding_id": "token.mintable", "points": 15, "counted": true,
-      "reason": "New tokens can be created, which dilutes holders.", "source": "GoPlus" },
-    { "finding_id": "token.tax_modifiable", "points": 15, "counted": true,
-      "reason": "The owner can raise the buy or sell tax at any time.", "source": "GoPlus" },
-    { "finding_id": "token.blacklist", "points": 10, "counted": true,
-      "reason": "The owner can block chosen wallets from selling or moving tokens.", "source": "GoPlus" },
-    { "finding_id": "token.insider_holds_large_share", "points": 10, "counted": true,
-      "reason": "The owner and creator together hold 30.0% of the supply.", "source": "GoPlus" }
+    { "finding_id": "token.hidden_owner", "points": 25,
+      "reason": "The contract has an owner-like role that is hidden from normal checks." },
+    { "finding_id": "token.extreme_concentration", "points": 15,
+      "reason": "The top 10 wallets hold 100.0% of the supply. They could crash the price." },
+    { "finding_id": "token.high_sell_tax", "points": 15, "reason": "Selling costs 14.45%." },
+    { "finding_id": "token.tax_modifiable", "points": 15,
+      "reason": "The owner can raise the buy or sell tax at any time." },
+    { "finding_id": "token.blacklist", "points": 10,
+      "reason": "The owner can block chosen wallets from selling or moving tokens." },
+    { "finding_id": "token.high_buy_tax", "points": 10, "reason": "Buying costs 15.0%." },
+    { "finding_id": "contract.owner_is_single_wallet", "points": 8,
+      "reason": "The owner (0x92ee…7ed1) is a normal wallet. If its key is lost, stolen, or used in bad faith, the owner-only functions below can be abused." }
   ],
-  "points_added": 218,
-  "points_removed": 0,
   "checks_run": ["check_token_risk", "inspect_contract", "address_labels"],
   "data_gaps": []
 }
 ```
 
-`inspect_contract` also writes a plain-English summary. For an unverified
-contract owned by one wallet:
+**Circle's USDC on Arbitrum** (`0xaf88d065…5831`) shows the owner-power cap
+and the "not counted twice" rule at work. Its admin powers are real and
+reported, but they add up to 30 points, not 70:
 
-> This contract's source code is not published, so its behaviour is hidden.
-> The function list below comes from a bytecode scan and may be incomplete.
-> It is owned by a single wallet (0xdede…dede). Functions that could hurt
-> users: it can create new tokens out of thin air, which dilutes every holder;
-> can block chosen wallets from selling or moving tokens.
+```json
+{
+  "score": 30,
+  "level": "medium",
+  "contributions": [
+    { "finding_id": "contract.upgradeable_by_wallet", "points": 20, "counted": true,
+      "reason": "This is an upgradeable proxy controlled by a single wallet (0xc7a5…ebc9). Whoever holds that wallet's key can change the rules at any time." },
+    { "finding_id": "contract.fn.blacklist", "points": 10, "counted": true,
+      "rule": "risky function, high severity; owner powers are capped at 30 points in total" },
+    { "finding_id": "contract.fn.mint", "points": 0, "counted": false,
+      "rule": "risky function, high severity; owner powers are capped at 30 points in total" },
+    { "finding_id": "token.proxy", "points": 0, "counted": false,
+      "rule": "rule token.proxy; same issue as contract.upgradeable_by_wallet, not counted twice" }
+  ]
+}
+```
+
+`inspect_contract` writes a plain-English summary. For the same USDC contract:
+
+> This is a verified contract named FiatTokenProxy. It is an upgradeable
+> proxy: the real logic lives at 0x86e7…57b3, and its admin can swap that
+> logic for new code. It is owned by a single wallet (0xc7a5…ebc9).
+> Functions that could hurt users: it can block chosen wallets from selling
+> or moving tokens; can create new tokens out of thin air, which dilutes
+> every holder; can freeze transfers or trading; can move funds held by the
+> contract out to an address the owner chooses; can replace the contract's
+> code with new code.
 
 ## The risk score
 
@@ -278,10 +297,16 @@ learning and no hidden weighting.
 3. Findings that describe the **same problem** share a group, and only the
    biggest in a group counts. For example, "source not verified" from GoPlus and
    from Etherscan count once.
-4. The total is clamped to 0–100.
-5. **Decisive findings** (honeypot, sanctioned address, known exploiter,
-   phishing, fake token, and a few others) set a **floor of 75**, so trust
-   signals can never hide them.
+4. **Owner powers are capped.** Mint, blacklist, pause, upgrade, withdraw,
+   trade limits, and single-wallet ownership all mean "a central party
+   controls this". Together they add at most 30 points. Regulated stablecoins
+   have all of these powers and are not scams. Scam-specific signals, such as
+   honeypots, tax tricks, and hidden owners, are not capped.
+5. The total is clamped to 0–100.
+6. **Decisive findings** set a **floor of 75**, so trust signals can never
+   hide them. Decisive means evidence of fraud or harm, not just the ability
+   to cause it: a honeypot, a sanctioned or exploiter address, phishing, a
+   fake token, and a few others.
 
 | Score | Level | Meaning |
 |---|---|---|
@@ -325,8 +350,52 @@ With `--record`, every response is saved to `eval/fixtures/cassette.json.gz`
 (API keys are never stored). Anyone can then reproduce the exact numbers with
 `--replay`, without keys or network access.
 
-**Results:** _pending the first live run._ The results table will go here
-and in [`eval/results.md`](eval/results.md).
+### Results
+
+From a live run on 2026-09-30. An address counts as flagged when it scores
+50 or more. The full per-item table is in [`eval/results.md`](eval/results.md).
+
+| Metric | Full scorer | Without local list |
+|---|---:|---:|
+| ROC AUC (1.0 = perfect separation, 0.5 = coin flip) | **0.981** | **0.958** |
+| Accuracy | 0.941 | 0.882 |
+| Precision (flagged items that really are risky) | 0.917 | 0.900 |
+| Recall (risky items that got flagged) | 0.917 | 0.750 |
+| False alarms | 1 of 22 safe | 1 of 22 safe |
+| Missed | 1 of 12 risky | 3 of 12 risky |
+| Mean score, risky / safe | 82.2 / 9.5 | 71.3 / 9.5 |
+
+**What it gets wrong, and why:**
+
+- **USDT scores 68 (false alarm).** USDT's owner really can wipe the balance
+  of a blacklisted wallet (`destroyBlackFunds`), and GoPlus reports it. The
+  finding is true. Whether it should make a major stablecoin "high risk" is
+  a judgment call, so it stays visible rather than being tuned away.
+- **SQUID scores 30 (missed).** The 2021 rug pull already happened. Today
+  the contract looks ordinary to GoPlus. Account history on BNB Chain needs a
+  paid Etherscan plan, so the tools could not see the old activity either.
+- **Tornado Cash pools score 23 without the local list (missed).** GoPlus
+  does not label the pool contracts themselves as mixers. The local list
+  catches them.
+
+**Honest note on tuning.** The first live run found real bugs and some rules
+that were too harsh. I fixed three bugs: wallets using EIP-7702 delegation
+were treated as contracts, empty GoPlus records made plain contracts look like
+tokens, and rate-limit retries gave up too early. I also changed three rules:
+the owner-power cap, "can change balances" no longer being decisive, and
+ignoring GoPlus's "linked to honeypots" label for tokens. Each change is its
+own commit with the reason. Because the rules were changed after seeing
+this dataset, the numbers above are optimistic. The first run, before any
+changes, scored:
+
+| Metric | First run, full | First run, without local list |
+|---|---:|---:|
+| ROC AUC | 0.951 | 0.894 |
+| Precision / recall | 0.786 / 0.917 | 0.750 / 0.750 |
+| False alarms | 3 of 22 | 3 of 22 |
+
+A fair next step is a larger, held-out set of addresses that was never used
+to tune the rules.
 
 ## Limitations
 
@@ -335,6 +404,11 @@ and in [`eval/results.md`](eval/results.md).
   found", not "safe".
 - **Rule weights are hand-picked.** They follow common scam patterns and are
   checked by the evaluation set, but they are not a trained statistical model.
+  Some rules were adjusted after the first evaluation run (see above), so the
+  published numbers are optimistic.
+- **Small evaluation set.** 34 addresses is enough to catch big mistakes, not
+  to prove accuracy. Past scams that have gone quiet, like SQUID, are hard to
+  catch after the fact.
 - **Sampled history.** Wallet profiles and fund tracing look at the latest
   100 transactions of each kind (50 for hop-2 addresses), and tracing follows
   the busiest paths only. Old or low-volume activity can be missed.
