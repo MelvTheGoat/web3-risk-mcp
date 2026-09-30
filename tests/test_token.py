@@ -176,3 +176,15 @@ async def test_goplus_record_for_non_token_is_ignored(services):
     assert report.findings == []
     assert report.is_proxy is None
     assert "may not be a token" in report.data_gaps[0]
+
+
+@respx.mock
+async def test_owner_who_is_also_creator_is_counted_once(services):
+    data = {**SCAM, "creator_address": OWNER, "owner_percent": "0.25", "creator_percent": "0.25"}
+    mock_goplus_token(ETH, TOKEN, data)
+    mock_dexscreener(ETH, TOKEN, [pair()])
+
+    report = await check_token_risk(services, ETH, TOKEN, now=NOW)
+    insider = next(f for f in report.findings if f.id == "token.insider_holds_large_share")
+
+    assert "25.0%" in insider.detail

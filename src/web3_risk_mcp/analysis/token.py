@@ -419,7 +419,11 @@ def _goplus_findings(report: TokenRiskReport, data: dict[str, Any]) -> list[Find
                 f"The top 10 wallets hold {top10}% of the supply.",
             )
         )
-    insider = (report.owner_pct or 0) + (report.creator_pct or 0)
+    insider = report.owner_pct or 0
+    if report.creator_address != report.owner_address:
+        # Owner and creator are often the same wallet. Count its balance once.
+        insider += report.creator_pct or 0
+    insider = min(insider, 100.0)
     if insider >= 20:
         out.append(
             _finding(
