@@ -74,11 +74,11 @@ async def score_risk(
             "inspect_contract": contract,
             "address_labels": address_labels,
         }
-        is_token = bool(token.pools) or token.is_open_source is not None or token.holder_count
+        is_token = bool(token.pools or token.symbol or token.holder_count)
         address_type: AddressType = "token" if is_token else "contract"
-        if not is_token:
-            # Token-specific gaps ("may not be a token") are noise for a plain contract.
-            token.data_gaps = [g for g in token.data_gaps if "may not be a token" not in g]
+        if not is_token and not any(s.source == "GoPlus" and not s.ok for s in token.sources):
+            # Not a token: token checks do not apply, so leave them out of the score.
+            del reports["check_token_risk"]
     else:
         tasks = [get_wallet_profile(services, chain, address, now=now)]
         if include_trace:

@@ -142,6 +142,10 @@ async def check_token_risk(
             if base:
                 report.name, report.symbol = base.get("name"), base.get("symbol")
 
+    if security and not _looks_like_token(security):
+        # GoPlus answers for any contract, but for non-tokens every token field is
+        # empty. Treat that as "no token data" instead of scoring an empty token.
+        security = None
     if security:
         _apply_goplus(report, security, {p.pair_address for p in pools})
     elif not c.failed("GoPlus"):
@@ -159,6 +163,11 @@ async def check_token_risk(
 
     report.sources = c.statuses
     return report
+
+
+def _looks_like_token(data: dict[str, Any]) -> bool:
+    holders = to_float(data.get("holder_count")) or 0
+    return bool(data.get("token_symbol") or data.get("token_name") or holders > 0)
 
 
 def _same(a: str | None, b: str) -> bool:

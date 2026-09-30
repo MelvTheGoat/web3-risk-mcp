@@ -157,3 +157,22 @@ async def test_token_with_no_pool_is_flagged(services):
     report = await check_token_risk(services, ETH, TOKEN, now=NOW)
 
     assert "token.no_liquidity" in {f.id for f in report.findings}
+
+
+@respx.mock
+async def test_goplus_record_for_non_token_is_ignored(services):
+    empty = {
+        "is_open_source": "1",
+        "is_proxy": "1",
+        "holder_count": "0",
+        "token_name": "",
+        "token_symbol": "",
+    }
+    mock_goplus_token(ETH, TOKEN, empty)
+    mock_dexscreener(ETH, TOKEN, [])
+
+    report = await check_token_risk(services, ETH, TOKEN, now=NOW)
+
+    assert report.findings == []
+    assert report.is_proxy is None
+    assert "may not be a token" in report.data_gaps[0]

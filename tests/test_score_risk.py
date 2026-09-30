@@ -24,7 +24,11 @@ NOW = datetime(2026, 9, 1, tzinfo=UTC)
 @respx.mock
 async def test_honeypot_token_scores_critical(services):
     mock_rpc(ETH, {"eth_getCode": "0x6080", "eth_getStorageAt": "0x" + "0" * 64})
-    mock_goplus_token(ETH, TOKEN, {"is_honeypot": "1", "is_open_source": "0", "sell_tax": "1"})
+    mock_goplus_token(
+        ETH,
+        TOKEN,
+        {"token_symbol": "HONEY", "is_honeypot": "1", "is_open_source": "0", "sell_tax": "1"},
+    )
     mock_dexscreener(ETH, TOKEN, [])
     mock_goplus_address({})
     mock_etherscan(
@@ -112,3 +116,20 @@ async def test_eip7702_wallet_is_scored_as_wallet(services):
 
     assert result.address_type == "wallet"
     assert "contract.unverified" not in {c.finding_id for c in result.contributions}
+
+
+@respx.mock
+async def test_plain_contract_is_not_scored_as_token(services):
+    mock_rpc(ETH, {"eth_getCode": "0x6080", "eth_getStorageAt": "0x" + "0" * 64})
+    mock_goplus_token(
+        ETH, TOKEN, {"is_open_source": "1", "is_proxy": "1", "holder_count": "0", "token_name": ""}
+    )
+    mock_dexscreener(ETH, TOKEN, [])
+    mock_goplus_address({})
+    mock_etherscan({"getsourcecode": [{"SourceCode": "x", "ABI": "[]", "ContractName": "Pool"}]})
+
+    result = await score_risk(services, ETH, TOKEN, now=NOW)
+
+    assert result.address_type == "contract"
+    assert "check_token_risk" not in result.checks_run
+    assert not any(c.finding_id.startswith("token.") for c in result.contributions)
