@@ -93,3 +93,22 @@ async def test_missing_sources_lower_confidence_not_score(services):
     assert result.confidence == "low"
     assert result.data_gaps
     assert "may be higher" in result.verdict
+
+
+@respx.mock
+async def test_eip7702_wallet_is_scored_as_wallet(services):
+    mock_rpc(
+        ETH,
+        {
+            "eth_getCode": "0xef0100" + "5a" * 20,
+            "eth_getBalance": "0x0",
+            "eth_getTransactionCount": "0x0",
+        },
+    )
+    mock_etherscan({})
+    mock_goplus_address({})
+
+    result = await score_risk(services, ETH, WALLET, include_trace=False, now=NOW)
+
+    assert result.address_type == "wallet"
+    assert "contract.unverified" not in {c.finding_id for c in result.contributions}

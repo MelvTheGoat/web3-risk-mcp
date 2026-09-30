@@ -1,0 +1,1344 @@
+{
+  "with_local_list": {
+    "rows": [
+      {
+        "label": "risky",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x43571a39f5f7799607075883d9ccd10427af69be",
+        "name": "Honeypot token (blacklist)",
+        "source": "GoPlus Security case study: https://goplussecurity.medium.com/dive-into-token-code-and-safeguard-web3-security-b7960a34a8fe",
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.hidden_owner (+25)",
+          "token.extreme_concentration (+15)",
+          "token.high_sell_tax (+15)",
+          "token.tax_modifiable (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 2.4
+      },
+      {
+        "label": "risky",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0x87230146e138d3f296a9a77e497a2a83012e9bc5",
+        "name": "SQUID (Squid Game token, 2021 rug pull)",
+        "source": "Widely reported 2021 rug pull where holders could not sell. https://bscscan.com/token/0x87230146e138d3f296a9a77e497a2a83012e9bc5",
+        "score": 30,
+        "level": "medium",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.implementation_unverified (+15)",
+          "contract.ownership_renounced (-5)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 4.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0xd13b093eafa3878de27183388fea7d0d2b0abf9e",
+        "name": "Fake_Phishing6102",
+        "source": "Etherscan label: https://etherscan.io/address/0xd13b093eafa3878de27183388fea7d0d2b0abf9e",
+        "score": 90,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "address.stealing_attack (+70)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x00000c07575bb4e64457687a0382b4d3ea470000",
+        "name": "Fake_Phishing184810 (address poisoning)",
+        "source": "Etherscan label, reported by ScamSniffer: https://etherscan.io/address/0x00000c07575bb4e64457687a0382b4d3ea470000",
+        "score": 80,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.phishing_activities (+70)",
+          "address.blacklist_doubt (+20)",
+          "wallet.established (-10)"
+        ],
+        "failed_sources": [],
+        "seconds": 12.3
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x2b022b3dff934b9ff5a82ed949970b129ec555fc",
+        "name": "Fake_Phishing608048",
+        "source": "Etherscan label, reported by ScamSniffer: https://etherscan.io/address/0x2b022b3dff934b9ff5a82ed949970b129ec555fc",
+        "score": 80,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.phishing_activities (+70)",
+          "address.blacklist_doubt (+20)",
+          "wallet.established (-10)"
+        ],
+        "failed_sources": [],
+        "seconds": 9.8
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x4de23f3f0fb3318287378adbde030cf61714b2f3",
+        "name": "Fake_Phishing7459364",
+        "source": "Etherscan label: https://etherscan.io/address/0x4de23f3f0fb3318287378adbde030cf61714b2f3",
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "address.phishing_activities (+70)",
+          "contract.unverified (+25)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.1
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96",
+        "name": "Ronin Bridge Exploiter",
+        "source": "OFAC SDN list; Etherscan label",
+        "in_local_list": true,
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.sanctioned (+90)",
+          "address.stealing_attack (+70)",
+          "trace.direct.exploit (+45)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 14.1
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x47666fab8bd0ac7003bce3f5c3585383f09486e2",
+        "name": "Bybit Exploiter 1",
+        "source": "Etherscan label: https://etherscan.io/address/0x47666fab8bd0ac7003bce3f5c3585383f09486e2",
+        "in_local_list": true,
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.known_exploit (+80)",
+          "trace.direct.flagged (+30)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 11.8
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0xb66cd966670d962c227b3eaba30a872dbfb995db",
+        "name": "Euler Finance Exploiter 2",
+        "source": "Etherscan label: https://etherscan.io/address/0xb66cd966670d962c227b3eaba30a872dbfb995db",
+        "in_local_list": true,
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.known_exploit (+80)",
+          "wallet.risky_counterparty (+25)"
+        ],
+        "failed_sources": [],
+        "seconds": 10.6
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x629e7da20197a5429d30da36e77d06cdf796b71a",
+        "name": "Wormhole Network Exploiter",
+        "source": "Etherscan label: https://etherscan.io/address/0x629e7da20197a5429d30da36e77d06cdf796b71a",
+        "in_local_list": true,
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.known_exploit (+80)",
+          "trace.direct.mixer (+30)"
+        ],
+        "failed_sources": [],
+        "seconds": 13.9
+      },
+      {
+        "label": "risky",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936",
+        "name": "Tornado Cash 1 ETH pool (mixer)",
+        "source": "Etherscan label",
+        "in_local_list": true,
+        "score": 63,
+        "level": "high",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "address.known_mixer (+40)",
+          "contract.implementation_unverified (+15)",
+          "contract.upgradeable (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 2.1
+      },
+      {
+        "label": "risky",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf",
+        "name": "Tornado Cash 10 ETH pool (mixer)",
+        "source": "Etherscan label",
+        "in_local_list": true,
+        "score": 63,
+        "level": "high",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "address.known_mixer (+40)",
+          "contract.implementation_unverified (+15)",
+          "contract.upgradeable (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 3.8
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "name": "USDC",
+        "source": "Circle",
+        "score": 34,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "name": "USDT",
+        "source": "Tether",
+        "score": 78,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.owner_can_change_balance (+50)",
+          "token.trusted (-40)",
+          "contract.fn.blacklist (+15)",
+          "token.mintable (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "name": "DAI",
+        "source": "Sky (MakerDAO)",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "name": "WETH",
+        "source": "Canonical wrapped ether",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "name": "UNI",
+        "source": "Uniswap",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.insider_holds_large_share (+10)",
+          "contract.fn.mint (+2)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "name": "LINK",
+        "source": "Chainlink",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "name": "AAVE",
+        "source": "Aave",
+        "score": 20,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.liquidity_not_locked (+10)",
+          "token.proxy (+10)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "name": "WBTC",
+        "source": "BitGo",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)",
+          "token.transfer_pausable (+10)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "name": "stETH (Lido, upgradeable)",
+        "source": "Lido",
+        "score": 36,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.liquidity_not_locked (+10)",
+          "token.proxy (+10)",
+          "contract.fn.pause (+8)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "base",
+        "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "name": "USDC on Base",
+        "source": "Circle",
+        "score": 34,
+        "level": "medium",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "base",
+        "address": "0x4200000000000000000000000000000000000006",
+        "name": "WETH on Base",
+        "source": "Base system contract",
+        "score": 48,
+        "level": "medium",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "address.honeypot_related_address (+40)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "arbitrum",
+        "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "name": "USDC on Arbitrum",
+        "source": "Circle",
+        "score": 74,
+        "level": "high",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)",
+          "contract.fn.pause (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "arbitrum",
+        "address": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "name": "ARB",
+        "source": "Arbitrum DAO",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "contract.fn.mint (+15)",
+          "token.proxy (+10)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "polygon",
+        "address": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "name": "USDC on Polygon",
+        "source": "Circle",
+        "score": 74,
+        "level": "high",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)",
+          "contract.fn.pause (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "polygon",
+        "address": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+        "name": "WPOL (wrapped POL)",
+        "source": "Polygon",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "name": "WBNB",
+        "source": "BNB Chain",
+        "score": 0,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0x55d398326f99059ff775485246999027b3197955",
+        "name": "USDT on BNB Chain",
+        "source": "Tether (Binance-Peg)",
+        "score": 0,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)",
+          "contract.owner_is_single_wallet (+8)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        "name": "CAKE",
+        "source": "PancakeSwap",
+        "score": 0,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 4.0
+      },
+      {
+        "label": "safe",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+        "name": "Uniswap V2 Router 2",
+        "source": "Uniswap docs",
+        "score": 0,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "contract",
+        "top_reasons": [],
+        "failed_sources": [
+          "GoPlus"
+        ],
+        "seconds": 10.0
+      },
+      {
+        "label": "safe",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "name": "Aave V3 Pool",
+        "source": "Aave docs",
+        "score": 16,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "contract",
+        "top_reasons": [
+          "contract.fn.withdraw (+8)",
+          "contract.upgradeable (+8)"
+        ],
+        "failed_sources": [
+          "GoPlus"
+        ],
+        "seconds": 10.2
+      },
+      {
+        "label": "safe",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+        "name": "vitalik.eth",
+        "source": "Public ENS name",
+        "score": 25,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "contract.unverified (+25)"
+        ],
+        "failed_sources": [],
+        "seconds": 4.1
+      },
+      {
+        "label": "safe",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x28c6c06298d514db089934071355e5743bf21d60",
+        "name": "Binance 14 (exchange hot wallet)",
+        "source": "Etherscan label",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "wallet.established (-10)"
+        ],
+        "failed_sources": [],
+        "seconds": 12.1
+      }
+    ],
+    "metrics": {
+      "risky_count": 12,
+      "safe_count": 22,
+      "roc_auc": 0.951,
+      "threshold": 50,
+      "true_positives": 11,
+      "false_positives": 3,
+      "true_negatives": 19,
+      "false_negatives": 1,
+      "precision": 0.786,
+      "recall": 0.917,
+      "accuracy": 0.882,
+      "risky_mean": 83.8,
+      "risky_median": 95.0,
+      "safe_mean": 20.0,
+      "safe_median": 0.0
+    }
+  },
+  "without_local_list": {
+    "rows": [
+      {
+        "label": "risky",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x43571a39f5f7799607075883d9ccd10427af69be",
+        "name": "Honeypot token (blacklist)",
+        "source": "GoPlus Security case study: https://goplussecurity.medium.com/dive-into-token-code-and-safeguard-web3-security-b7960a34a8fe",
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.hidden_owner (+25)",
+          "token.extreme_concentration (+15)",
+          "token.high_sell_tax (+15)",
+          "token.tax_modifiable (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0x87230146e138d3f296a9a77e497a2a83012e9bc5",
+        "name": "SQUID (Squid Game token, 2021 rug pull)",
+        "source": "Widely reported 2021 rug pull where holders could not sell. https://bscscan.com/token/0x87230146e138d3f296a9a77e497a2a83012e9bc5",
+        "score": 30,
+        "level": "medium",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.implementation_unverified (+15)",
+          "contract.ownership_renounced (-5)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 0.6
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0xd13b093eafa3878de27183388fea7d0d2b0abf9e",
+        "name": "Fake_Phishing6102",
+        "source": "Etherscan label: https://etherscan.io/address/0xd13b093eafa3878de27183388fea7d0d2b0abf9e",
+        "score": 90,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "address.stealing_attack (+70)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.1
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x00000c07575bb4e64457687a0382b4d3ea470000",
+        "name": "Fake_Phishing184810 (address poisoning)",
+        "source": "Etherscan label, reported by ScamSniffer: https://etherscan.io/address/0x00000c07575bb4e64457687a0382b4d3ea470000",
+        "score": 80,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.phishing_activities (+70)",
+          "address.blacklist_doubt (+20)",
+          "wallet.established (-10)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x2b022b3dff934b9ff5a82ed949970b129ec555fc",
+        "name": "Fake_Phishing608048",
+        "source": "Etherscan label, reported by ScamSniffer: https://etherscan.io/address/0x2b022b3dff934b9ff5a82ed949970b129ec555fc",
+        "score": 80,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.phishing_activities (+70)",
+          "address.blacklist_doubt (+20)",
+          "wallet.established (-10)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x4de23f3f0fb3318287378adbde030cf61714b2f3",
+        "name": "Fake_Phishing7459364",
+        "source": "Etherscan label: https://etherscan.io/address/0x4de23f3f0fb3318287378adbde030cf61714b2f3",
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "address.phishing_activities (+70)",
+          "contract.unverified (+25)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96",
+        "name": "Ronin Bridge Exploiter",
+        "source": "OFAC SDN list; Etherscan label",
+        "in_local_list": true,
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.sanctioned (+90)",
+          "address.stealing_attack (+70)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x47666fab8bd0ac7003bce3f5c3585383f09486e2",
+        "name": "Bybit Exploiter 1",
+        "source": "Etherscan label: https://etherscan.io/address/0x47666fab8bd0ac7003bce3f5c3585383f09486e2",
+        "in_local_list": true,
+        "score": 100,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.stealing_attack (+70)",
+          "trace.direct.flagged (+30)",
+          "address.blacklist_doubt (+20)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0xb66cd966670d962c227b3eaba30a872dbfb995db",
+        "name": "Euler Finance Exploiter 2",
+        "source": "Etherscan label: https://etherscan.io/address/0xb66cd966670d962c227b3eaba30a872dbfb995db",
+        "in_local_list": true,
+        "score": 75,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.stealing_attack (+70)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x629e7da20197a5429d30da36e77d06cdf796b71a",
+        "name": "Wormhole Network Exploiter",
+        "source": "Etherscan label: https://etherscan.io/address/0x629e7da20197a5429d30da36e77d06cdf796b71a",
+        "in_local_list": true,
+        "score": 75,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "address.stealing_attack (+70)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "risky",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936",
+        "name": "Tornado Cash 1 ETH pool (mixer)",
+        "source": "Etherscan label",
+        "in_local_list": true,
+        "score": 23,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "contract.implementation_unverified (+15)",
+          "contract.upgradeable (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.2
+      },
+      {
+        "label": "risky",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf",
+        "name": "Tornado Cash 10 ETH pool (mixer)",
+        "source": "Etherscan label",
+        "in_local_list": true,
+        "score": 23,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "contract.implementation_unverified (+15)",
+          "contract.upgradeable (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.2
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "name": "USDC",
+        "source": "Circle",
+        "score": 34,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "name": "USDT",
+        "source": "Tether",
+        "score": 78,
+        "level": "critical",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.owner_can_change_balance (+50)",
+          "token.trusted (-40)",
+          "contract.fn.blacklist (+15)",
+          "token.mintable (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "name": "DAI",
+        "source": "Sky (MakerDAO)",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.2
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "name": "WETH",
+        "source": "Canonical wrapped ether",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "name": "UNI",
+        "source": "Uniswap",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.insider_holds_large_share (+10)",
+          "contract.fn.mint (+2)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.2
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "name": "LINK",
+        "source": "Chainlink",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.2
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "name": "AAVE",
+        "source": "Aave",
+        "score": 20,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.liquidity_not_locked (+10)",
+          "token.proxy (+10)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.4
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "name": "WBTC",
+        "source": "BitGo",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)",
+          "token.transfer_pausable (+10)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.1
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "ethereum",
+        "address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "name": "stETH (Lido, upgradeable)",
+        "source": "Lido",
+        "score": 36,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.liquidity_not_locked (+10)",
+          "token.proxy (+10)",
+          "contract.fn.pause (+8)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.2
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "base",
+        "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "name": "USDC on Base",
+        "source": "Circle",
+        "score": 34,
+        "level": "medium",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 0.2
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "base",
+        "address": "0x4200000000000000000000000000000000000006",
+        "name": "WETH on Base",
+        "source": "Base system contract",
+        "score": 48,
+        "level": "medium",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "address.honeypot_related_address (+40)",
+          "token.high_concentration (+8)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 0.3
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "arbitrum",
+        "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "name": "USDC on Arbitrum",
+        "source": "Circle",
+        "score": 74,
+        "level": "high",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)",
+          "contract.fn.pause (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "arbitrum",
+        "address": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+        "name": "ARB",
+        "source": "Arbitrum DAO",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "contract.fn.mint (+15)",
+          "token.proxy (+10)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.5
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "polygon",
+        "address": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "name": "USDC on Polygon",
+        "source": "Circle",
+        "score": 74,
+        "level": "high",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "contract.upgradeable_by_wallet (+20)",
+          "contract.fn.blacklist (+15)",
+          "contract.fn.mint (+15)",
+          "contract.fn.pause (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "polygon",
+        "address": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+        "name": "WPOL (wrapped POL)",
+        "source": "Polygon",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "name": "WBNB",
+        "source": "BNB Chain",
+        "score": 0,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 0.2
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0x55d398326f99059ff775485246999027b3197955",
+        "name": "USDT on BNB Chain",
+        "source": "Tether (Binance-Peg)",
+        "score": 0,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)",
+          "contract.owner_is_single_wallet (+8)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 16.1
+      },
+      {
+        "label": "safe",
+        "kind": "token",
+        "chain": "bsc",
+        "address": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+        "name": "CAKE",
+        "source": "PancakeSwap",
+        "score": 0,
+        "level": "low",
+        "confidence": "medium",
+        "address_type": "token",
+        "top_reasons": [
+          "token.trusted (-40)",
+          "token.mintable (+15)"
+        ],
+        "failed_sources": [
+          "Etherscan"
+        ],
+        "seconds": 0.3
+      },
+      {
+        "label": "safe",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+        "name": "Uniswap V2 Router 2",
+        "source": "Uniswap docs",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [],
+        "failed_sources": [],
+        "seconds": 0.6
+      },
+      {
+        "label": "safe",
+        "kind": "contract",
+        "chain": "ethereum",
+        "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "name": "Aave V3 Pool",
+        "source": "Aave docs",
+        "score": 38,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "token",
+        "top_reasons": [
+          "token.no_liquidity (+20)",
+          "token.proxy (+10)",
+          "contract.fn.withdraw (+8)"
+        ],
+        "failed_sources": [],
+        "seconds": 2.0
+      },
+      {
+        "label": "safe",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+        "name": "vitalik.eth",
+        "source": "Public ENS name",
+        "score": 25,
+        "level": "medium",
+        "confidence": "high",
+        "address_type": "contract",
+        "top_reasons": [
+          "contract.unverified (+25)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      },
+      {
+        "label": "safe",
+        "kind": "wallet",
+        "chain": "ethereum",
+        "address": "0x28c6c06298d514db089934071355e5743bf21d60",
+        "name": "Binance 14 (exchange hot wallet)",
+        "source": "Etherscan label",
+        "score": 0,
+        "level": "low",
+        "confidence": "high",
+        "address_type": "wallet",
+        "top_reasons": [
+          "wallet.established (-10)"
+        ],
+        "failed_sources": [],
+        "seconds": 0.0
+      }
+    ],
+    "metrics": {
+      "risky_count": 12,
+      "safe_count": 22,
+      "roc_auc": 0.894,
+      "threshold": 50,
+      "true_positives": 9,
+      "false_positives": 3,
+      "true_negatives": 19,
+      "false_negatives": 3,
+      "precision": 0.75,
+      "recall": 0.75,
+      "accuracy": 0.824,
+      "risky_mean": 73,
+      "risky_median": 80.0,
+      "safe_mean": 21.0,
+      "safe_median": 0.0
+    }
+  }
+}

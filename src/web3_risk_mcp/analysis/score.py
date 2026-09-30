@@ -16,6 +16,7 @@ from web3_risk_mcp.analysis.token import check_token_risk
 from web3_risk_mcp.analysis.trace import trace_funds
 from web3_risk_mcp.analysis.wallet import get_wallet_profile
 from web3_risk_mcp.chains import Chain
+from web3_risk_mcp.clients.rpc import is_contract_code
 from web3_risk_mcp.models import Finding, Report, SourceStatus
 from web3_risk_mcp.scoring import ScoreResult, score_findings
 
@@ -62,7 +63,7 @@ async def score_risk(
     code = await c.run("RPC", services.rpc.code(chain, address))
 
     reports: dict[str, Report] = {}
-    if code is not None and code != "0x":
+    if code is not None and is_contract_code(code):
         token, contract, address_labels = await asyncio.gather(
             check_token_risk(services, chain, address, now=now),
             inspect_contract(services, chain, address, now=now),
@@ -86,7 +87,7 @@ async def score_risk(
         reports["get_wallet_profile"] = results[0]
         if include_trace:
             reports["trace_funds"] = results[1]
-        address_type = "wallet" if code == "0x" else "unknown"
+        address_type = "wallet" if code is not None else "unknown"
 
     findings: list[Finding] = [f for r in reports.values() for f in r.findings]
     sources = _merge_sources([*c.statuses, *(s for r in reports.values() for s in r.sources)])

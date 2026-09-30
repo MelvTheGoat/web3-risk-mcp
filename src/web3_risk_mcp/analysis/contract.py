@@ -14,6 +14,8 @@ from web3_risk_mcp.chains import Chain
 from web3_risk_mcp.clients.rpc import (
     EIP1967_ADMIN_SLOT,
     EIP1967_IMPLEMENTATION_SLOT,
+    delegation_target,
+    is_contract_code,
     slot_to_address,
 )
 from web3_risk_mcp.errors import SourceError
@@ -54,12 +56,17 @@ async def inspect_contract(
     )
 
     if code is not None:
-        report.is_contract = code != "0x"
+        report.is_contract = is_contract_code(code)
         report.bytecode_size_bytes = max(0, (len(code) - 2) // 2)
         if not report.is_contract:
+            target = delegation_target(code)
             report.summary = (
-                "This address has no contract code. It is a normal wallet (or a contract that "
-                "self-destructed). Use get_wallet_profile instead."
+                f"This is a normal wallet that delegates to the contract at {target} "
+                "(EIP-7702). It is still controlled by a private key. Use get_wallet_profile "
+                "for the wallet, or inspect_contract on the delegate address."
+                if target
+                else "This address has no contract code. It is a normal wallet (or a contract "
+                "that self-destructed). Use get_wallet_profile instead."
             )
             report.sources = c.statuses
             return report
@@ -177,7 +184,7 @@ async def _classify(c: Collector, services: Services, chain: Chain, address: str
     code = await c.run("RPC", services.rpc.code(chain, address))
     if code is None:
         return Controller(address=address, kind="unknown")
-    if code == "0x":
+    if not is_contract_code(code):
         return Controller(address=address, kind="wallet")
     threshold = await c.run(
         "RPC", _safe_eth_call(services, chain, address, "0x" + THRESHOLD_SELECTOR)

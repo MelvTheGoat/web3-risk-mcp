@@ -85,6 +85,7 @@ RULES: dict[str, Rule] = {
     "wallet.no_history": Rule(5, "wallet_age"),
     "wallet.many_failed_txs": Rule(5),
     "wallet.established": Rule(-10),
+    "wallet.delegated_code": Rule(0),
     # Token
     "token.honeypot": Rule(60, "honeypot", decisive=True),
     "token.airdrop_scam": Rule(60, decisive=True),

@@ -120,3 +120,18 @@ async def test_contract_address_gets_a_hint(services):
 
     assert profile.is_contract is True
     assert any("inspect_contract" in gap for gap in profile.data_gaps)
+
+
+@respx.mock
+async def test_eip7702_delegated_wallet_is_still_a_wallet(services):
+    delegate = "5a7fc11397e9a8ad41bf10bf13f22b0a63f96f6d"
+    mock_etherscan({})
+    mock_rpc(ETH, rpc_handlers(code="0xef0100" + delegate))
+    mock_goplus_address({})
+
+    profile = await get_wallet_profile(services, ETH, ME, now=NOW)
+
+    assert profile.is_contract is False
+    assert profile.delegated_to == "0x" + delegate
+    assert "wallet.delegated_code" in {f.id for f in profile.findings}
+    assert not any("inspect_contract" in gap for gap in profile.data_gaps)

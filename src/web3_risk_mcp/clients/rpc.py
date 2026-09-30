@@ -65,6 +65,24 @@ def slot_to_address(value: str | None) -> str | None:
     return "0x" + f"{number:064x}"[-40:]
 
 
+# EIP-7702 lets a normal wallet point at contract code it wants to run. Its
+# code is then 0xef0100 followed by the 20-byte address it delegates to.
+# The account is still a wallet controlled by a private key.
+_DELEGATION_PREFIX = "0xef0100"
+
+
+def delegation_target(code: str | None) -> str | None:
+    """Return the address a wallet delegates to under EIP-7702, if any."""
+    if code and code.lower().startswith(_DELEGATION_PREFIX) and len(code) == 48:
+        return "0x" + code[8:].lower()
+    return None
+
+
+def is_contract_code(code: str) -> bool:
+    """True if the code belongs to a real contract, not a wallet."""
+    return code not in ("", "0x") and delegation_target(code) is None
+
+
 class RpcClient:
     """Read-only JSON-RPC calls, one endpoint per chain."""
 

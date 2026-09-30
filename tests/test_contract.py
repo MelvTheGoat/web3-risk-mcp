@@ -226,3 +226,15 @@ async def test_etherscan_down_still_scans_bytecode(services):
     assert report.verified is None
     assert [f.name for f in report.risky_functions] == ["pause()"]
     assert any("Source code and creator could not be checked" in g for g in report.data_gaps)
+
+
+@respx.mock
+async def test_eip7702_wallet_is_not_treated_as_contract(services):
+    mock_etherscan({})
+    mock_rpc(ETH, rpc({CONTRACT: "0xef0100" + "5a" * 20}))
+
+    report = await inspect_contract(services, ETH, CONTRACT, now=NOW)
+
+    assert report.is_contract is False
+    assert "EIP-7702" in report.summary
+    assert report.findings == []

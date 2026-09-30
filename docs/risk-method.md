@@ -71,6 +71,7 @@ does not mean "safe".**
 | `wallet.no_history` | +5 | wallet_age |  |
 | `wallet.many_failed_txs` | +5 |  |  |
 | `wallet.established` | -10 |  |  |
+| `wallet.delegated_code` | +0 |  |  |
 | `token.honeypot` | +60 | honeypot | yes |
 | `token.airdrop_scam` | +60 |  | yes |
 | `token.fake_token` | +60 |  | yes |

@@ -87,6 +87,9 @@ class TokenActivity(BaseModel):
 
 class WalletProfile(Report):
     is_contract: bool | None = None
+    delegated_to: str | None = Field(
+        None, description="Contract this wallet delegates to under EIP-7702, if any."
+    )
     native_symbol: str
     native_balance: float | None = None
     transactions_sent: int | None = Field(

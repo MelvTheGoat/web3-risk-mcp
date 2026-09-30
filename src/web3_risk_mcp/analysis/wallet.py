@@ -16,6 +16,7 @@ from web3_risk_mcp.analysis.common import (
     wei_to_coin,
 )
 from web3_risk_mcp.chains import Chain
+from web3_risk_mcp.clients.rpc import delegation_target, is_contract_code
 from web3_risk_mcp.models import (
     ActivityPattern,
     Counterparty,
@@ -65,11 +66,24 @@ async def get_wallet_profile(
         native_symbol=chain.native_symbol,
         native_balance=wei_to_coin(balance) if balance is not None else None,
         transactions_sent=nonce,
-        is_contract=(code not in (None, "0x")) if code is not None else None,
+        is_contract=is_contract_code(code) if code is not None else None,
+        delegated_to=delegation_target(code),
         known_label=known,
         security_flags=goplus_flags(security),
     )
     profile.findings.extend(address_findings(address, security, known))
+    if profile.delegated_to:
+        profile.findings.append(
+            Finding(
+                id="wallet.delegated_code",
+                severity="info",
+                title="Wallet runs delegated code (EIP-7702)",
+                detail=f"This wallet has chosen to run the code at {profile.delegated_to}. It is "
+                "still controlled by its private key. Delegating to an unknown contract can be "
+                "risky for the wallet's own owner, so check what that code does.",
+                source="RPC",
+            )
+        )
 
     history_ok = not c.failed("Etherscan")
     if history_ok:
