@@ -1,3 +1,6 @@
+import gzip
+import json
+
 import httpx
 import pytest
 import respx
@@ -50,3 +53,15 @@ async def test_record_then_replay_offline(tmp_path):
         }
         assert (await client.get("https://x.io/missing")).status_code == 404
     assert len(replay.misses) == 1
+
+
+@respx.mock
+async def test_recording_handles_compressed_responses(tmp_path):
+    body = gzip.compress(json.dumps({"v": 2}).encode())
+    respx.get("https://x.io/gz").mock(
+        return_value=httpx.Response(200, content=body, headers={"content-encoding": "gzip"})
+    )
+    cassette = Cassette(tmp_path / "c.json.gz")
+    async with httpx.AsyncClient(transport=RecordingTransport(cassette)) as client:
+        assert (await client.get("https://x.io/gz")).json() == {"v": 2}
+    assert json.loads(next(iter(cassette.entries.values()))["body"]) == {"v": 2}

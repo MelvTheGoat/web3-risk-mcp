@@ -21,6 +21,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import httpx
 
 _SECRET_KEYS = {"apikey", "api_key", "key", "token"}
+_ENCODING_HEADERS = {"content-encoding", "content-length", "transfer-encoding"}
 
 # --- Metrics -----------------------------------------------------------------
 
@@ -127,7 +128,12 @@ class RecordingTransport(httpx.AsyncBaseTransport):
                 "status": response.status_code,
                 "body": body.decode("utf-8", errors="replace"),
             }
-        return httpx.Response(response.status_code, headers=response.headers, content=body)
+        # The body is already decompressed, so drop the headers that describe the
+        # compressed form. Otherwise the client would try to decompress it again.
+        headers = [
+            (k, v) for k, v in response.headers.multi_items() if k.lower() not in _ENCODING_HEADERS
+        ]
+        return httpx.Response(response.status_code, headers=headers, content=body)
 
     async def aclose(self) -> None:
         await self.inner.aclose()
