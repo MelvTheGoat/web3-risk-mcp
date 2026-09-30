@@ -75,6 +75,10 @@ async def score_risk(
             "address_labels": address_labels,
         }
         is_token = bool(token.pools or token.symbol or token.holder_count)
+        if is_token:
+            address_labels.findings = [
+                _supersede_honeypot_label(f) for f in address_labels.findings
+            ]
         address_type: AddressType = "token" if is_token else "contract"
         if not is_token and not any(s.source == "GoPlus" and not s.ok for s in token.sources):
             # Not a token: token checks do not apply, so leave them out of the score.
@@ -104,6 +108,23 @@ async def score_risk(
         checks_run=list(reports),
         data_gaps=gaps,
         sources=sources,
+    )
+
+
+def _supersede_honeypot_label(finding: Finding) -> Finding:
+    """For a token, "linked to honeypots" is weak evidence: popular tokens like WETH
+    are paired with many honeypots. check_token_risk tests the token directly, so
+    that result is used instead and this label is kept for information only."""
+    if finding.id != "address.honeypot_related_address":
+        return finding
+    return finding.model_copy(
+        update={
+            "id": "address.honeypot_related_token",
+            "severity": "info",
+            "detail": finding.detail
+            + " For a token this usually means it is paired with honeypots in trading "
+            "pools. The direct honeypot test in check_token_risk is used instead.",
+        }
     )
 
 

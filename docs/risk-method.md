@@ -16,10 +16,17 @@ reason and a data source.
 3. **Do not count twice.** Findings that describe the same problem share a
    *group*. Only the biggest finding in a group counts. For example, "source
    not verified" from GoPlus and from Etherscan count once.
-4. **Add up and clamp.** Points are added and kept between 0 and 100.
-5. **Decisive floor.** Some findings are so serious that nothing should hide
-   them, such as a honeypot token or a sanctioned address. If one is present,
-   the score is at least 75, however many trust signals there are.
+4. **Cap owner powers.** Mint, blacklist, pause, upgrade, withdraw, trade
+   limits, and single-wallet ownership all say the same thing: a central
+   party controls the contract. Together they add at most 30 points
+   (groups: blacklist, limits, mint, pause, single_owner, upgradeable, withdraw). A regulated stablecoin has many of these powers
+   and is not a scam. Scam-specific signals such as honeypots, tax tricks, and
+   hidden owners are not capped.
+5. **Add up and clamp.** Points are added and kept between 0 and 100.
+6. **Decisive floor.** Some findings are evidence of fraud or harm, not just
+   the ability to cause it, such as a honeypot token or a sanctioned address.
+   If one is present, the score is at least 75, however many trust
+   signals there are.
 
 ## Levels
 
@@ -55,6 +62,7 @@ does not mean "safe".**
 | `address.darkweb_transactions` | +50 | crime |  |
 | `address.malicious_contracts_created` | +50 |  |  |
 | `address.honeypot_related_address` | +40 |  |  |
+| `address.honeypot_related_token` | +0 |  |  |
 | `address.fake_token` | +40 |  |  |
 | `address.known_mixer` | +40 | mixer |  |
 | `address.mixer` | +30 | mixer |  |
@@ -75,7 +83,7 @@ does not mean "safe".**
 | `token.honeypot` | +60 | honeypot | yes |
 | `token.airdrop_scam` | +60 |  | yes |
 | `token.fake_token` | +60 |  | yes |
-| `token.owner_can_change_balance` | +50 | balance_control | yes |
+| `token.owner_can_change_balance` | +50 | balance_control |  |
 | `token.extreme_sell_tax` | +45 | sell_tax | yes |
 | `token.cannot_sell_all` | +35 | honeypot |  |
 | `token.no_sells` | +35 | honeypot |  |
@@ -114,7 +122,7 @@ does not mean "safe".**
 | `contract.upgradeable` | +8 | upgradeable |  |
 | `contract.implementation_unverified` | +15 |  |  |
 | `contract.selfdestruct` | +20 | selfdestruct |  |
-| `contract.owner_is_single_wallet` | +8 |  |  |
+| `contract.owner_is_single_wallet` | +8 | single_owner |  |
 | `contract.very_new` | +10 | age |  |
 | `contract.ownership_renounced` | -5 |  |  |
 | `contract.owner_is_multisig` | -5 |  |  |

@@ -109,3 +109,30 @@ def test_method_doc_is_up_to_date():
     assert doc.read_text() == scoring_method_markdown(), (
         "Run: uv run python scripts/render_method_doc.py"
     )
+
+
+def test_owner_powers_are_capped_together():
+    findings = [
+        f("contract.upgradeable_by_wallet"),
+        f("contract.fn.mint", "high"),
+        f("contract.fn.blacklist", "high"),
+        f("contract.fn.pause", "medium"),
+        f("contract.owner_is_single_wallet", "medium"),
+    ]
+    result = score_findings(findings, OK)
+    assert result.score == 30
+    capped = [c for c in result.contributions if "capped" in c.rule]
+    assert capped
+    assert all(c.reason for c in result.contributions)
+
+
+def test_cap_does_not_touch_scam_signals():
+    findings = [f("contract.fn.mint", "high"), f("contract.fn.blacklist", "high")]
+    findings += [f("token.hidden_owner"), f("token.per_wallet_tax")]
+    assert score_findings(findings, OK).score == 30 + 25 + 30
+
+
+def test_power_to_change_balances_is_not_decisive():
+    result = score_findings([f("token.owner_can_change_balance"), f("token.trusted", "info")], OK)
+    assert result.score == 10
+    assert not result.decisive_floor_applied

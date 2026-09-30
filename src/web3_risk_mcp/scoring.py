@@ -8,9 +8,15 @@ How it works, in four steps:
 3. Some findings describe the same problem seen by two sources (for example
    "source not verified" from both GoPlus and Etherscan). These share a
    group, and only the biggest one in a group counts. Nothing is counted twice.
-4. The total is kept between 0 and 100. If a "decisive" finding is present,
+4. Owner powers (mint, blacklist, pause, upgrade, and similar) all describe
+   one thing: a central party controls the contract. Together they add at
+   most 30 points, so a regulated stablecoin with many admin functions is not
+   scored like a scam. Scam-specific signals (honeypot, tax tricks, hidden
+   owners) are not capped.
+5. The total is kept between 0 and 100. If a "decisive" finding is present,
    such as a honeypot or a sanctioned address, the score cannot be below 75,
-   no matter how many trust signals there are.
+   no matter how many trust signals there are. Decisive means evidence of
+   harm or fraud, not just the ability to cause it.
 
 There is no machine learning and no hidden weighting. Anyone can read the
 table and recompute the score by hand.
@@ -27,6 +33,12 @@ from web3_risk_mcp.models import Finding, Severity, SourceStatus
 
 Level = Literal["low", "medium", "high", "critical"]
 DECISIVE_FLOOR = 75
+
+# Groups that describe owner control rather than fraud, and their shared cap.
+OWNER_POWER_GROUPS = frozenset(
+    {"mint", "blacklist", "pause", "upgradeable", "limits", "withdraw", "single_owner"}
+)
+OWNER_POWER_CAP = 30
 
 LEVELS: list[tuple[int, Level, str]] = [
     (75, "critical", "Very likely dangerous. Do not interact."),
@@ -68,6 +80,7 @@ RULES: dict[str, Rule] = {
     "address.darkweb_transactions": Rule(50, "crime"),
     "address.malicious_contracts_created": Rule(50),
     "address.honeypot_related_address": Rule(40),
+    "address.honeypot_related_token": Rule(0),
     "address.fake_token": Rule(40),
     "address.known_mixer": Rule(40, "mixer"),
     "address.mixer": Rule(30, "mixer"),
@@ -90,7 +103,7 @@ RULES: dict[str, Rule] = {
     "token.honeypot": Rule(60, "honeypot", decisive=True),
     "token.airdrop_scam": Rule(60, decisive=True),
     "token.fake_token": Rule(60, decisive=True),
-    "token.owner_can_change_balance": Rule(50, "balance_control", decisive=True),
+    "token.owner_can_change_balance": Rule(50, "balance_control"),
     "token.extreme_sell_tax": Rule(45, "sell_tax", decisive=True),
     "token.cannot_sell_all": Rule(35, "honeypot"),
     "token.no_sells": Rule(35, "honeypot"),
@@ -130,7 +143,7 @@ RULES: dict[str, Rule] = {
     "contract.upgradeable": Rule(8, "upgradeable"),
     "contract.implementation_unverified": Rule(15),
     "contract.selfdestruct": Rule(20, "selfdestruct"),
-    "contract.owner_is_single_wallet": Rule(8),
+    "contract.owner_is_single_wallet": Rule(8, "single_owner"),
     "contract.very_new": Rule(10, "age"),
     "contract.ownership_renounced": Rule(-5),
     "contract.owner_is_multisig": Rule(-5),
@@ -214,8 +227,10 @@ def score_findings(findings: list[Finding], sources: list[SourceStatus]) -> Scor
     used_groups: dict[str, str] = {}
     contributions = []
     decisive = False
+    owner_power_points = 0
     for finding, rule, rule_text in rated:
         counted = True
+        points = rule.points
         text = rule_text
         if rule.group and rule.points > 0:
             if rule.group in used_groups:
@@ -223,6 +238,13 @@ def score_findings(findings: list[Finding], sources: list[SourceStatus]) -> Scor
                 text += f"; same issue as {used_groups[rule.group]}, not counted twice"
             else:
                 used_groups[rule.group] = finding.id
+        if counted and rule.group in OWNER_POWER_GROUPS and points > 0:
+            allowed = max(0, OWNER_POWER_CAP - owner_power_points)
+            if points > allowed:
+                points = allowed
+                text += f"; owner powers are capped at {OWNER_POWER_CAP} points in total"
+                counted = allowed > 0
+            owner_power_points += points
         if counted and rule.decisive:
             decisive = True
             text += "; decisive"
@@ -231,7 +253,7 @@ def score_findings(findings: list[Finding], sources: list[SourceStatus]) -> Scor
                 finding_id=finding.id,
                 title=finding.title,
                 severity=finding.severity,
-                points=rule.points if counted else 0,
+                points=points if counted else 0,
                 counted=counted,
                 reason=finding.detail,
                 source=finding.source,

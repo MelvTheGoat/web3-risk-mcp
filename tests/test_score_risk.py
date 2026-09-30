@@ -133,3 +133,20 @@ async def test_plain_contract_is_not_scored_as_token(services):
     assert result.address_type == "contract"
     assert "check_token_risk" not in result.checks_run
     assert not any(c.finding_id.startswith("token.") for c in result.contributions)
+
+
+@respx.mock
+async def test_honeypot_label_on_a_clean_token_is_informational(services):
+    mock_rpc(ETH, {"eth_getCode": "0x6080", "eth_getStorageAt": "0x" + "0" * 64})
+    mock_goplus_token(
+        ETH, TOKEN, {"token_symbol": "WETH", "is_open_source": "1", "holder_count": "900"}
+    )
+    mock_dexscreener(ETH, TOKEN, [])
+    mock_goplus_address({"honeypot_related_address": "1"})
+    mock_etherscan({"getsourcecode": [{"SourceCode": "x", "ABI": "[]", "ContractName": "WETH9"}]})
+
+    result = await score_risk(services, ETH, TOKEN, now=NOW)
+    by_id = {c.finding_id: c for c in result.contributions}
+
+    assert "address.honeypot_related_address" not in by_id
+    assert by_id["address.honeypot_related_token"].points == 0

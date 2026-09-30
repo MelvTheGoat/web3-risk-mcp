@@ -6,7 +6,14 @@ never drift out of date.
 
 from __future__ import annotations
 
-from web3_risk_mcp.scoring import DECISIVE_FLOOR, LEVELS, RULES, SEVERITY_POINTS
+from web3_risk_mcp.scoring import (
+    DECISIVE_FLOOR,
+    LEVELS,
+    OWNER_POWER_CAP,
+    OWNER_POWER_GROUPS,
+    RULES,
+    SEVERITY_POINTS,
+)
 
 _INTRO = """\
 # How the risk score works
@@ -27,10 +34,17 @@ reason and a data source.
 3. **Do not count twice.** Findings that describe the same problem share a
    *group*. Only the biggest finding in a group counts. For example, "source
    not verified" from GoPlus and from Etherscan count once.
-4. **Add up and clamp.** Points are added and kept between 0 and 100.
-5. **Decisive floor.** Some findings are so serious that nothing should hide
-   them, such as a honeypot token or a sanctioned address. If one is present,
-   the score is at least {floor}, however many trust signals there are.
+4. **Cap owner powers.** Mint, blacklist, pause, upgrade, withdraw, trade
+   limits, and single-wallet ownership all say the same thing: a central
+   party controls the contract. Together they add at most {cap} points
+   (groups: {cap_groups}). A regulated stablecoin has many of these powers
+   and is not a scam. Scam-specific signals such as honeypots, tax tricks, and
+   hidden owners are not capped.
+5. **Add up and clamp.** Points are added and kept between 0 and 100.
+6. **Decisive floor.** Some findings are evidence of fraud or harm, not just
+   the ability to cause it, such as a honeypot token or a sanctioned address.
+   If one is present, the score is at least {floor}, however many trust
+   signals there are.
 
 ## Levels
 
@@ -81,4 +95,11 @@ def scoring_method_markdown() -> str:
         for fid, rule in RULES.items()
     )
     severity = ", ".join(f"{sev} = {pts}" for sev, pts in SEVERITY_POINTS.items())
-    return _INTRO.format(floor=DECISIVE_FLOOR, levels=levels, rules=rules, severity=severity)
+    return _INTRO.format(
+        floor=DECISIVE_FLOOR,
+        levels=levels,
+        rules=rules,
+        severity=severity,
+        cap=OWNER_POWER_CAP,
+        cap_groups=", ".join(sorted(OWNER_POWER_GROUPS)),
+    )
