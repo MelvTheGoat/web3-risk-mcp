@@ -318,13 +318,13 @@ learning and no hidden weighting.
 Each score also has a **confidence** (high, medium, or low) based on how many
 data sources answered. Every contribution lists its points, its reason, its
 source, and the rule that applied. The full rule table is in
-[docs/risk-method.md](docs/risk-method.md), and clients can read it through the
+[docs/risk-method.md](https://github.com/MelvTheGoat/web3-risk-mcp/blob/main/docs/risk-method.md), and clients can read it through the
 `risk://scoring-method` resource. Both are generated from the code, and a test
 fails if the document drifts.
 
 ## Evaluation
 
-[`eval/dataset.json`](eval/dataset.json) has 34 hand-checked addresses, each
+[`eval/dataset.json`](https://github.com/MelvTheGoat/web3-risk-mcp/blob/main/eval/dataset.json) has 34 hand-checked addresses, each
 with a source for its label:
 
 - **12 risky**: a honeypot token from a GoPlus case study, the SQUID rug pull,
@@ -334,7 +334,7 @@ with a source for its label:
   LINK, AAVE, WBTC, stETH, ARB, CAKE, and others), Uniswap and Aave contracts,
   vitalik.eth, and an exchange hot wallet.
 
-[`eval/run_eval.py`](eval/run_eval.py) scores every item and reports ROC AUC,
+[`eval/run_eval.py`](https://github.com/MelvTheGoat/web3-risk-mcp/blob/main/eval/run_eval.py) scores every item and reports ROC AUC,
 precision, recall, false alarms, and missed items at a threshold of 50. It
 runs **twice**. The second run switches off the local list of known bad
 addresses. Six risky items are on that list, so the second run shows what the
@@ -353,7 +353,7 @@ With `--record`, every response is saved to `eval/fixtures/cassette.json.gz`
 ### Results
 
 From a live run on 2026-09-30. An address counts as flagged when it scores
-50 or more. The full per-item table is in [`eval/results.md`](eval/results.md).
+50 or more. The full per-item table is in [`eval/results.md`](https://github.com/MelvTheGoat/web3-risk-mcp/blob/main/eval/results.md).
 
 | Metric | Full scorer | Without local list |
 |---|---:|---:|
@@ -469,4 +469,4 @@ src/web3_risk_mcp/
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/MelvTheGoat/web3-risk-mcp/blob/main/LICENSE)

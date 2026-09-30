@@ -3,6 +3,9 @@
 Run with stdio (for Claude Desktop, Cursor, and most local clients):
     web3-risk-mcp
 
+Run straight from PyPI without installing anything first:
+    uvx web3-risk-mcp
+
 Run as a streamable HTTP server (for remote or shared use):
     web3-risk-mcp --transport http --port 8000
 """
@@ -13,6 +16,7 @@ import argparse
 import logging
 import sys
 
+from web3_risk_mcp import __version__
 from web3_risk_mcp.config import get_settings
 from web3_risk_mcp.server import create_server
 
@@ -23,6 +27,7 @@ def main(argv: list[str] | None = None) -> None:
         prog="web3-risk-mcp",
         description="Read-only MCP server that checks wallets, tokens, and contracts for risk.",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--transport", choices=["stdio", "http"], default="stdio")
     parser.add_argument("--host", default=settings.http_host)
     parser.add_argument("--port", type=int, default=settings.http_port)
