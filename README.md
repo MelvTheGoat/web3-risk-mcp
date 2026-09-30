@@ -124,13 +124,27 @@ A few design choices worth knowing:
 
 ## Setup
 
-You need Python 3.11+ and [uv](https://docs.astral.sh/uv/).
+### Quick start (no download needed)
+
+The server is on PyPI, so you only need [uv](https://docs.astral.sh/uv/),
+a small tool that runs Python programs. Install it once:
 
 ```bash
-git clone https://github.com/MelvTheGoat/web3-risk-mcp.git
-cd web3-risk-mcp
-uv sync
-cp .env.example .env    # then add your keys
+# Mac or Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Then get a free Etherscan key (see [API keys](#api-keys-all-free)) and
+[connect your client](#connect-it-to-claude-desktop-or-cursor). The client
+starts the server for you with `uvx web3-risk-mcp`. uvx downloads the latest
+version the first time and reuses it after that.
+
+Try it in a terminal first if you like:
+
+```bash
+uvx web3-risk-mcp --version
 ```
 
 ### API keys (all free)
@@ -142,16 +156,24 @@ cp .env.example .env    # then add your keys
 | `RPC_URL_<CHAIN>` | Any provider, for example Alchemy or Infura | No. Free public nodes are the default. |
 | DexScreener | No key | – |
 
+Settings are read from environment variables. With the quick start, you put
+them in the `env` block of your client's config (shown below). When you run
+from a copy of the repo, you can use a `.env` file instead (see `.env.example`).
+
 > **Note on Etherscan's free plan.** It no longer includes account history
 > on Base and BNB Chain. On those chains the wallet and tracing tools still
 > return balance and contract data from RPC, and they say that history is
 > missing. Source-code lookups work on every chain.
 
-Never commit your `.env` file. It is already in `.gitignore`.
+Keep your keys private. Never commit a `.env` file or share your config file.
 
-### Run it
+### Run from source (for development)
 
 ```bash
+git clone https://github.com/MelvTheGoat/web3-risk-mcp.git
+cd web3-risk-mcp
+uv sync
+cp .env.example .env                                   # then add your keys
 uv run web3-risk-mcp                                   # stdio (for local clients)
 uv run web3-risk-mcp --transport http --port 8000      # streamable HTTP at /mcp
 ```
@@ -171,27 +193,48 @@ The image runs as a non-root user.
 ### Claude Desktop
 
 Open **Settings → Developer → Edit Config** and add this to
-`claude_desktop_config.json`. Use the full path to your copy of the repo.
+`claude_desktop_config.json`. Put your own key in place of `your-key-here`.
 
 ```json
 {
   "mcpServers": {
     "web3-risk": {
-      "command": "uv",
-      "args": ["--directory", "/full/path/to/web3-risk-mcp", "run", "web3-risk-mcp"]
+      "command": "uvx",
+      "args": ["web3-risk-mcp"],
+      "env": { "ETHERSCAN_API_KEY": "your-key-here" }
     }
   }
 }
 ```
 
-`--directory` makes the server start inside the repo, so it finds your `.env`.
 Restart Claude Desktop. The tools appear under the tools icon, and the
 `investigate_address` prompt appears in the prompt menu.
+
+If the tools do not appear, Claude Desktop may not find `uvx`. Replace
+`"uvx"` with its full path, which `which uvx` (Mac) or `where uvx` (Windows)
+prints.
 
 ### Cursor
 
 Add the same block to `~/.cursor/mcp.json` (all projects) or
 `.cursor/mcp.json` (one project):
+
+```json
+{
+  "mcpServers": {
+    "web3-risk": {
+      "command": "uvx",
+      "args": ["web3-risk-mcp"],
+      "env": { "ETHERSCAN_API_KEY": "your-key-here" }
+    }
+  }
+}
+```
+
+### Running from a copy of the repo instead
+
+Point the client at your folder. `--directory` makes the server start there,
+so it reads your `.env` file:
 
 ```json
 {
@@ -212,6 +255,18 @@ client at `http://localhost:8000/mcp`:
 ```json
 { "mcpServers": { "web3-risk": { "url": "http://localhost:8000/mcp" } } }
 ```
+
+Only run the HTTP server on your own machine or a private network. It has no
+login, so anyone who can reach it can use your API keys.
+
+## Releasing a new version
+
+1. Change `version` in `pyproject.toml` and commit.
+2. Tag and push: `git tag v0.2.0 && git push origin v0.2.0`.
+
+The release workflow runs the tests, builds the package, publishes it to PyPI,
+and creates a GitHub release. It uses PyPI trusted publishing, so no PyPI
+password or token is stored in GitHub.
 
 ## Example questions and outputs
 
