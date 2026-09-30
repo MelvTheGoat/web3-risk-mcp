@@ -30,6 +30,19 @@ jobs:
       - name: Run tests
         run: uv run pytest -q
 
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Build
+        run: uv build
+
+      - name: Check the built package installs and starts
+        run: uvx --isolated --from dist/*.whl web3-risk-mcp --version
+
   docker:
     runs-on: ubuntu-latest
     steps:

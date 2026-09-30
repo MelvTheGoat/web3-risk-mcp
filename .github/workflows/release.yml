@@ -1,0 +1,76 @@
+name: Release
+
+# Runs when a version tag like v0.1.0 is pushed.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Check the tag matches the version in pyproject.toml
+        run: |
+          version="$(uv version --short)"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match version ${version} in pyproject.toml"
+            exit 1
+          fi
+
+      - name: Lint and test
+        run: |
+          uv sync --locked
+          uv run ruff check .
+          uv run pytest -q
+
+      - name: Build
+        run: uv build
+
+      - name: Check the built package installs and starts
+        run: uvx --isolated --from dist/*.whl web3-risk-mcp --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # PyPI "trusted publishing": PyPI trusts this workflow directly,
+    # so no password or API token is stored in GitHub.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/web3-risk-mcp/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Publish to PyPI
+        run: uv publish --trusted-publishing always
+
+  github-release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --generate-notes
