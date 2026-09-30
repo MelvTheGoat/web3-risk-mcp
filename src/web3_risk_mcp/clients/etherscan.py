@@ -38,7 +38,7 @@ def _validate(body: Any) -> None:
     detail = str(result) if isinstance(result, str) else message
     lowered = detail.lower()
     if "rate limit" in lowered:
-        raise SourceError(NAME, f"Rate limit reached: {detail}", retryable=True)
+        raise SourceError(NAME, f"Rate limit reached: {detail}", rate_limited=True)
     if "invalid api key" in lowered or ("missing" in lowered and "key" in lowered):
         raise SourceError(NAME, "The API key was rejected. Check ETHERSCAN_API_KEY in your .env.")
     if "not supported for this chain" in lowered or "upgrade your api plan" in lowered:

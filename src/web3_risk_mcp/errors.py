@@ -14,10 +14,14 @@ class SourceError(Web3RiskError):
 
     `source` names the service, so a report can say exactly what is missing.
     `retryable` tells the HTTP layer whether trying again might help.
+    `rate_limited` means we sent too many requests, so the retry should wait longer.
     """
 
-    def __init__(self, source: str, message: str, *, retryable: bool = False) -> None:
+    def __init__(
+        self, source: str, message: str, *, retryable: bool = False, rate_limited: bool = False
+    ) -> None:
         super().__init__(f"{source}: {message}")
         self.source = source
         self.message = message
-        self.retryable = retryable
+        self.retryable = retryable or rate_limited
+        self.rate_limited = rate_limited

@@ -37,7 +37,7 @@ def _validate(body: Any) -> None:
         return
     message = body.get("message") or "unknown error"
     if code in _RATE_LIMIT_CODES or "too many" in str(message).lower():
-        raise SourceError(NAME, f"Rate limit reached: {message}", retryable=True)
+        raise SourceError(NAME, f"Rate limit reached: {message}", rate_limited=True)
     raise SourceError(NAME, f"Request failed (code {code}): {message}")
 
 

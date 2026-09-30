@@ -20,6 +20,7 @@ async def source():
             cache_ttl=60,
             max_retries=2,
             backoff_base=0.001,
+            rate_limit_backoff_base=0.001,
         )
 
 
@@ -128,3 +129,20 @@ async def test_rate_limiter_spaces_out_requests():
         await limiter.acquire()
     # First call is free, the next five wait about 1/50 s each.
     assert loop.time() - start >= 0.08
+
+
+async def test_rate_limits_wait_longer_than_other_errors():
+    async with httpx.AsyncClient() as client:
+        src = HttpSource("X", client, requests_per_second=10, cache_ttl=0)
+        assert src._backoff(0) < 1
+        assert 4 <= src._backoff(0, rate_limited=True) <= 6
+        assert src._backoff(10, rate_limited=True) <= 36
+
+
+@respx.mock
+async def test_http_429_is_marked_rate_limited(source):
+    respx.get(URL).mock(return_value=httpx.Response(429))
+    source.max_retries = 0
+    with pytest.raises(SourceError) as info:
+        await source.request_json("GET", URL)
+    assert info.value.rate_limited

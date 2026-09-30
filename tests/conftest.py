@@ -26,4 +26,5 @@ async def services(settings):
         svc = Services(settings, client=client)
         for source in (svc.etherscan.http, svc.goplus.http, svc.dexscreener.http, svc.rpc.http):
             source.backoff_base = 0.001
+            source.rate_limit_backoff_base = 0.001
         yield svc

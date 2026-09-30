@@ -123,6 +123,8 @@ class HttpSource:
         max_retries: int = 3,
         backoff_base: float = 0.5,
         backoff_max: float = 8.0,
+        rate_limit_backoff_base: float = 5.0,
+        rate_limit_backoff_max: float = 30.0,
     ) -> None:
         self.name = name
         self.client = client
@@ -131,6 +133,9 @@ class HttpSource:
         self.max_retries = max_retries
         self.backoff_base = backoff_base
         self.backoff_max = backoff_max
+        # Rate limits are usually counted per minute, so short waits do not help.
+        self.rate_limit_backoff_base = rate_limit_backoff_base
+        self.rate_limit_backoff_max = rate_limit_backoff_max
         # Requests for the same thing at the same moment share one network call.
         self._inflight: dict[str, asyncio.Future[Any]] = {}
 
@@ -203,6 +208,7 @@ class HttpSource:
                         self.name,
                         _status_message(response.status_code),
                         retryable=True,
+                        rate_limited=response.status_code == 429,
                     )
                 if response.status_code >= 400:
                     raise SourceError(self.name, _status_message(response.status_code))
@@ -235,6 +241,7 @@ class HttpSource:
                         self.name,
                         f"{error.message} Gave up after {attempt + 1} tries.",
                         retryable=True,
+                        rate_limited=error.rate_limited,
                     )
                 # Retryable errors that ran out of tries are worth a warning. Others,
                 # like a contract call that reverts, are often expected.
@@ -242,7 +249,10 @@ class HttpSource:
                 log("%s request failed: %s %s: %s", self.name, url, redact(params), error.message)
                 raise error
 
-            delay = retry_after if retry_after is not None else self._backoff(attempt)
+            if retry_after is not None:
+                delay = retry_after
+            else:
+                delay = self._backoff(attempt, rate_limited=error.rate_limited)
             logger.info(
                 "%s: %s Retrying in %.1fs (try %d of %d).",
                 self.name,
@@ -254,11 +264,14 @@ class HttpSource:
             await asyncio.sleep(delay)
             attempt += 1
 
-    def _backoff(self, attempt: int) -> float:
+    def _backoff(self, attempt: int, *, rate_limited: bool = False) -> float:
         # Exponential backoff with "jitter" (a little randomness), so many
         # clients that fail together do not all retry at the same instant.
-        delay = min(self.backoff_max, self.backoff_base * (2**attempt))
-        return delay * random.uniform(0.8, 1.2)
+        if rate_limited:
+            base, cap = self.rate_limit_backoff_base, self.rate_limit_backoff_max
+        else:
+            base, cap = self.backoff_base, self.backoff_max
+        return min(cap, base * (2**attempt)) * random.uniform(0.8, 1.2)
 
 
 def _parse_retry_after(value: str | None) -> float | None:
