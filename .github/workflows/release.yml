@@ -23,9 +23,9 @@ jobs:
 
       - name: Lint and test
         run: |
-          uv sync --locked
-          uv run ruff check .
-          uv run pytest -q
+          uv sync --locked --all-extras
+          uv run --all-extras ruff check .
+          uv run --all-extras pytest -q
 
       - name: Build
         run: uv build

@@ -10,6 +10,9 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
+    env:
+      # Every uv command below uses the matrix Python, not .python-version.
+      UV_PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -19,16 +22,18 @@ jobs:
           enable-cache: true
 
       - name: Install Python and dependencies
-        run: uv sync --locked --all-extras --python ${{ matrix.python-version }}
+        run: uv sync --locked --all-extras
 
       - name: Lint
-        run: uv run ruff check .
+        run: uv run --all-extras ruff check .
 
       - name: Check formatting
-        run: uv run ruff format --check .
+        run: uv run --all-extras ruff format --check .
 
       - name: Run tests
-        run: uv run pytest -q
+        run: |
+          uv run --all-extras python --version
+          uv run --all-extras pytest -q
 
   package:
     runs-on: ubuntu-latest
