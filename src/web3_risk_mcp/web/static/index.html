@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arc Safe Send</title>
+  <meta name="description" content="Check a wallet, token, or contract on Arc before you send USDC. A 0 to 100 risk score with a reason for every point.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%232f6fdf'/%3E%3Cpath d='m10.5 16 4 4 7-8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <p class="brand"><span class="logo" aria-hidden="true"></span>Arc Safe Send</p>
+      <h1>Check the other side before money moves.</h1>
+      <p class="lead">Paste a wallet, token, or contract address on Arc. You get a 0 to 100 risk score,
+        a reason for every point, and a confidence level. Then, if you want, pay in USDC from your own wallet.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <form id="check-form" class="card check-form" novalidate>
+      <div class="field address-field">
+        <label for="address">Address to check</label>
+        <input id="address" name="address" type="text" placeholder="0x…" autocomplete="off"
+               autocapitalize="off" spellcheck="false" inputmode="text" maxlength="100" required>
+      </div>
+      <div class="field chain-field">
+        <label for="chain">Chain</label>
+        <select id="chain" name="chain">
+          <option value="arc" selected>Arc</option>
+        </select>
+      </div>
+      <button id="check-button" class="primary" type="submit">Check</button>
+      <p class="examples">Try:
+        <button type="button" class="link" data-address="0x3600000000000000000000000000000000000000">USDC on Arc</button>
+        <button type="button" class="link" data-address="0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d">Circle's CCTP bridge</button>
+        <button type="button" class="link" data-address="0x7f367cc41522ce07553e823bf3be79a889debe1b">A wallet USDC blocks</button>
+      </p>
+    </form>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+
+    <section id="result" class="result" hidden aria-labelledby="result-title">
+      <h2 id="result-title" class="visually-hidden">Result</h2>
+      <div id="score-card" class="card score-card">
+        <div class="score-dial">
+          <span id="score" class="score-number">0</span><span class="score-max">/100</span>
+        </div>
+        <div class="score-text">
+          <p id="level" class="level"></p>
+          <p id="verdict" class="verdict"></p>
+          <dl class="facts">
+            <div><dt>Confidence</dt><dd id="confidence"></dd></div>
+            <div><dt>Type</dt><dd id="address-type"></dd></div>
+            <div><dt>Chain</dt><dd id="chain-name"></dd></div>
+          </dl>
+          <p class="address-line"><code id="checked-address"></code>
+            <a id="explorer-link" href="#" target="_blank" rel="noopener noreferrer">View on explorer</a></p>
+        </div>
+      </div>
+
+      <div class="band" aria-hidden="true">
+        <div class="band-track">
+          <span class="seg low"></span><span class="seg medium"></span><span class="seg high"></span><span class="seg critical"></span>
+          <span id="band-marker" class="marker"></span>
+        </div>
+        <div class="band-labels"><span>Low</span><span>Medium</span><span>High</span><span>Critical</span></div>
+      </div>
+
+      <section class="card" aria-labelledby="reasons-title">
+        <h2 id="reasons-title">Why this score</h2>
+        <p id="reasons-empty" class="muted" hidden>No finding added or removed points.</p>
+        <ol id="reasons" class="reasons"></ol>
+        <p class="muted small">Every point comes from a public rule table (version <span id="rules-version"></span>).
+          <a href="https://github.com/MelvTheGoat/web3-risk-mcp/blob/arc-microgrant/docs/risk-method.md" target="_blank" rel="noopener noreferrer">Read the rules</a>.</p>
+      </section>
+
+      <details id="gaps-box" class="card">
+        <summary>What we could not check (<span id="gap-count">0</span>)</summary>
+        <ul id="gaps"></ul>
+      </details>
+
+      <details class="card">
+        <summary>Data sources and how the data was read</summary>
+        <ul id="sources" class="sources"></ul>
+        <ul id="notes"></ul>
+        <p id="cache-note" class="muted small"></p>
+      </details>
+
+      <section id="pay" class="card pay" aria-labelledby="pay-title" hidden>
+        <h2 id="pay-title">Check, then pay</h2>
+        <p class="muted">Send USDC on Arc from your own browser wallet, such as MetaMask.
+          This site never sees your keys and never signs anything. Your wallet shows the payment before you approve it.</p>
+        <ul id="advice" class="advice"></ul>
+        <div class="pay-row">
+          <div class="field">
+            <label for="amount">Amount (USDC)</label>
+            <input id="amount" type="text" inputmode="decimal" placeholder="10.00" autocomplete="off">
+          </div>
+          <button id="send-button" class="primary" type="button">Connect wallet and send</button>
+        </div>
+        <label id="confirm-row" class="confirm" hidden>
+          <input id="confirm-risk" type="checkbox">
+          <span>I have read the warnings above and still want to send.</span>
+        </label>
+        <p id="pay-status" class="pay-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="attest" class="card" aria-labelledby="attest-title" hidden>
+        <h2 id="attest-title">Save this check on Arc</h2>
+        <p class="muted">Write this result to the RiskAttestation contract on Arc from your own wallet,
+          so anyone can see who checked this address, when, and what the score was. It costs a small fee in USDC.</p>
+        <dl id="attest-fields" class="facts wide"></dl>
+        <button id="attest-button" class="secondary" type="button">Save to Arc</button>
+        <p id="attest-status" class="pay-status" role="status" aria-live="polite"></p>
+        <div id="attest-history"></div>
+      </section>
+    </section>
+
+    <section class="card about" aria-labelledby="about-title">
+      <h2 id="about-title">How it works</h2>
+      <ul>
+        <li><strong>Read-only.</strong> The check only reads public data from Etherscan, GoPlus, DexScreener, and Arc's RPC nodes. It never asks for a private key.</li>
+        <li><strong>Built for Arc.</strong> On Arc, USDC is the native coin. Every USDC move is read from Arc's system Transfer logs and counted once, at 18 decimals. Every address is checked against the USDC and EURC blocklists.</li>
+        <li><strong>Explainable.</strong> No black box: each point in the score comes from a public rule, with its source.</li>
+        <li><strong>For AI agents too.</strong> The same check is an MCP tool. Agents that pay in USDC can call <code>score_risk</code> with <code>chain: "arc"</code> before they send.</li>
+      </ul>
+      <p class="muted small">A low score is not a promise of safety. It means the data we could check showed no red flags. Not financial advice.
+        <a href="https://github.com/MelvTheGoat/web3-risk-mcp/tree/arc-microgrant" target="_blank" rel="noopener noreferrer">Source code</a></p>
+    </section>
+  </main>
+  <noscript><p class="wrap">This page needs JavaScript to run the check.</p></noscript>
+</body>
+</html>

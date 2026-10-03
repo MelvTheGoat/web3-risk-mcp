@@ -38,6 +38,13 @@ Issues = "https://github.com/MelvTheGoat/web3-risk-mcp/issues"
 
 [project.scripts]
 web3-risk-mcp = "web3_risk_mcp.__main__:main"
+web3-risk-web = "web3_risk_mcp.web.__main__:main"
+
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.142",
+    "uvicorn>=0.30",
+]
 
 [build-system]
 requires = ["uv_build>=0.8.17,<0.9.0"]
