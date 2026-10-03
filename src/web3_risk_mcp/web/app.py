@@ -27,7 +27,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from web3_risk_mcp import __version__
+from web3_risk_mcp import __version__, attestation
+from web3_risk_mcp.analysis.common import Collector
 from web3_risk_mcp.analysis.score import RiskScore, score_risk
 from web3_risk_mcp.chains import CHAINS, Chain, get_chain, normalize_address
 from web3_risk_mcp.config import get_settings
@@ -63,12 +64,25 @@ class CheckRequest(BaseModel):
     chain: str = Field(default=DEFAULT_CHAIN, max_length=40)
 
 
+class AttestationInfo(attestation.AttestationData):
+    """What "Save this check on Arc" writes, and earlier saved checks."""
+
+    contract: str | None = Field(description="The RiskAttestation contract, if configured.")
+    history: list[attestation.SavedCheck] = Field(default_factory=list)
+
+
 class CheckResponse(BaseModel):
     result: RiskScore
     explorer_url: str
     checked_at: datetime
     cached: bool = Field(description="True if this answer came from the cache.")
     send_advice: SendAdvice
+    attestation: AttestationInfo | None = Field(
+        default=None, description="Arc only: data for saving this check on chain."
+    )
+
+
+_Checked = tuple[RiskScore, datetime, "AttestationInfo | None"]
 
 
 class _Checker:
@@ -111,16 +125,34 @@ class _Checker:
         for limiter, shared, _ in self.limits:
             limiter.record("all" if shared else ip)
 
-    async def run(self, key: str, chain: Chain, address: str) -> tuple[RiskScore, datetime]:
+    async def run(self, key: str, chain: Chain, address: str) -> _Checked:
         assert self.services is not None
         async with self.parallel:
             result = await score_risk(self.services, chain, address)
-        checked_at = datetime.now(UTC)
+            saved = await self._attestation(chain, result)
+        checked = (result, datetime.now(UTC), saved)
         ttl = self.web.web_result_cache_seconds
         if result.confidence != "high":
             ttl = min(ttl, DEGRADED_CACHE_SECONDS)
-        self.cache.set(key, (result, checked_at), ttl)
-        return result, checked_at
+        self.cache.set(key, checked, ttl)
+        return checked
+
+    async def _attestation(self, chain: Chain, result: RiskScore) -> AttestationInfo | None:
+        """On Arc: the data to save this check, and checks saved earlier."""
+        if chain.key != DEFAULT_CHAIN:
+            return None
+        contract = self.web.attestation_contract or None
+        history: list[attestation.SavedCheck] = []
+        if contract:
+            # A failure here only hides the history; it never breaks the check.
+            found = await Collector().run(
+                "Etherscan",
+                attestation.saved_checks(self.services, chain, contract, result.address),
+            )
+            history = found or []
+        return AttestationInfo(
+            **attestation.build(result).model_dump(), contract=contract, history=history
+        )
 
 
 def _error(status: int, message: str, **extra) -> JSONResponse:
@@ -216,7 +248,7 @@ def create_app(
         key = f"{chain.key}:{address}"
         cached = checker.cache.get(key)
         if cached is not None:
-            result, checked_at = cached
+            result, checked_at, saved = cached
             from_cache = True
         else:
             task = checker.inflight.get(key)
@@ -231,7 +263,7 @@ def create_app(
                 checker.inflight[key] = task
                 task.add_done_callback(lambda _t: checker.inflight.pop(key, None))
             try:
-                result, checked_at = await asyncio.shield(task)
+                result, checked_at, saved = await asyncio.shield(task)
             except Exception:
                 logger.exception("Check failed for %s", key)
                 return _error(500, "The check failed unexpectedly. Please try again.")
@@ -243,6 +275,7 @@ def create_app(
             checked_at=checked_at,
             cached=from_cache,
             send_advice=send_advice(result, chain),
+            attestation=saved,
         )
 
     return app

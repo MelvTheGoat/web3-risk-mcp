@@ -233,3 +233,26 @@ def test_without_a_simulation_the_known_rules_still_apply():
     assert listed.can_send is False
     contract = send_advice(_result(address_type="contract", send_check=None), ARC)
     assert (contract.can_send, contract.needs_confirmation) == (True, True)
+
+
+# --- Save the check on Arc ---------------------------------------------------------
+
+
+def test_arc_check_includes_data_to_save_it_on_chain(client):
+    data = check(client, BLOCKED_WALLET).json()
+    saved = data["attestation"]
+    assert saved["calldata"].startswith("0xde93cefc")
+    assert saved["calldata"].endswith(saved["findings_hash"].removeprefix("0x"))
+    assert saved["contract"] is None  # no contract configured in this test
+    assert check(client, "0x" + "ab" * 20, chain="ethereum").json()["attestation"] is None
+
+
+def test_unreadable_history_never_breaks_the_check(settings):
+    contract = "0x" + "aa" * 20
+    with make_client(settings, attestation_contract=contract) as c:
+        assert c.get("/api/config").json()["attestation_contract"] == contract
+        response = check(c, BLOCKED_WALLET)
+    # The recording has no event logs for this contract, so reading them fails.
+    assert response.status_code == 200
+    assert response.json()["attestation"]["contract"] == contract
+    assert response.json()["attestation"]["history"] == []

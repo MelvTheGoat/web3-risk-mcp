@@ -3,8 +3,11 @@ variables or a `.env` file. See `.env.example`."""
 
 from __future__ import annotations
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from web3_risk_mcp.chains import normalize_address
+from web3_risk_mcp.errors import InvalidInputError
 
 
 class WebSettings(BaseSettings):
@@ -33,3 +36,13 @@ class WebSettings(BaseSettings):
     # Address of the RiskAttestation contract on Arc, once you have deployed
     # it. Empty hides the "Save this check on Arc" button.
     attestation_contract: str = ""
+
+    @field_validator("attestation_contract")
+    @classmethod
+    def _valid_address(cls, value: str) -> str:
+        if not value.strip():
+            return ""
+        try:
+            return normalize_address(value)
+        except InvalidInputError as exc:
+            raise ValueError(f"ATTESTATION_CONTRACT: {exc}") from exc

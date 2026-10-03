@@ -153,6 +153,34 @@ class EtherscanClient:
             },
         )
 
+    async def logs(
+        self,
+        chain: Chain,
+        address: str,
+        *,
+        topic0: str,
+        topic2: str | None = None,
+        limit: int = 1000,
+    ) -> list[dict[str, Any]]:
+        """Event logs written by one contract, oldest first.
+
+        `topic0` picks the event. `topic2` (optional) must also match, for
+        example the address an event is about.
+        """
+        params: dict[str, Any] = {
+            "module": "logs",
+            "action": "getLogs",
+            "address": address,
+            "topic0": topic0,
+            "fromBlock": 0,
+            "toBlock": "latest",
+            "page": 1,
+            "offset": limit,
+        }
+        if topic2:
+            params |= {"topic2": topic2, "topic0_2_opr": "and"}
+        return await self._call(chain, params)
+
     async def source_code(self, chain: Chain, address: str) -> dict[str, Any]:
         """Verified source code and ABI for a contract.
 
