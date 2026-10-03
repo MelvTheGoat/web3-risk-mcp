@@ -166,7 +166,8 @@
     for (const c of contributions) {
       const sign = c.points > 0 ? "plus" : c.points < 0 ? "minus" : "zero";
       const points = c.points > 0 ? `+${c.points}` : `${c.points}`;
-      const meta = `Source: ${c.source}. ${c.counted ? "Rule" : "Not counted. Rule"}: ${c.rule}.`;
+      const rule = c.rule.charAt(0).toUpperCase() + c.rule.slice(1);
+      const meta = `Source: ${c.source}. ${c.counted ? "" : "Not counted. "}${rule}.`;
       list.append(
         el("li", { className: `reason${c.counted ? "" : " not-counted"}` },
           el("span", { className: `points ${sign}`, "aria-label": `${points} points` }, points),

@@ -9,11 +9,16 @@ A fraud analyst for web3 that any AI assistant can use.
 `web3-risk-mcp` is an **MCP server**: a small program that gives AI assistants
 (Claude Desktop, Cursor, and other MCP clients) new tools. These tools check a
 crypto wallet, token, or smart contract for risk **before** someone interacts
-with it. It then gives a 0–100 risk score with a clear reason for every point.
+with it. It then gives a 0 to 100 risk score with a clear reason for every point.
 
 > **MCP** (Model Context Protocol) is an open standard for connecting AI
 > assistants to outside tools and data. Write a tool once, and every MCP
 > client can use it.
+
+**New: [Arc Safe Send](#arc-and-arc-safe-send).** A web page and MCP tool
+that checks an address on Arc, Circle's chain, before you send USDC. It reads
+Circle's USDC and EURC blocklists, simulates the payment, counts each USDC
+move once, and lets you pay from your own wallet.
 
 ---
 
@@ -23,6 +28,7 @@ with it. It then gives a 0–100 risk score with a clear reason for every point.
 - [Read-only by design](#read-only-by-design)
 - [What it can do](#what-it-can-do)
 - [How it works](#how-it-works)
+- [Arc and Arc Safe Send](#arc-and-arc-safe-send)
 - [Setup](#setup)
 - [Connect it to Claude Desktop or Cursor](#connect-it-to-claude-desktop-or-cursor)
 - [Example questions and outputs](#example-questions-and-outputs)
@@ -62,11 +68,15 @@ Because of this, it is safe to hand the tools to an AI assistant. The worst a
 confused assistant can do is read public data. Every tool is also marked with
 the MCP `readOnlyHint`, so clients know it does not change anything.
 
+The Arc Safe Send web app follows the same rule. When a user pays or saves a
+check on Arc, their own browser wallet builds, shows, and signs the
+transaction. The server only reads public data.
+
 ## What it can do
 
 | Tool | What it answers |
 |---|---|
-| `score_risk` | "How risky is this address?" Detects if it is a wallet, token, or contract, runs the right checks, and returns a 0–100 score with every point explained. |
+| `score_risk` | "How risky is this address?" Detects if it is a wallet, token, or contract, runs the right checks, and returns a 0 to 100 score with every point explained. |
 | `get_wallet_profile` | Wallet age, balance, number of transactions sent, top counterparties, tokens used recently, activity patterns, who first funded it, and known bad-actor labels. |
 | `check_token_risk` | Honeypot signs, mint, blacklist, and pause powers, buy and sell tax, owner and holder concentration, liquidity size, and whether liquidity is locked. |
 | `inspect_contract` | Is the source verified? Is it an upgradeable proxy? Who controls it: a single wallet, a multisig, or nobody? Plus a plain-English summary of risky functions. Works on unverified contracts too, by scanning the bytecode. |
@@ -78,7 +88,9 @@ Also included:
 - **Resource** `risk://scoring-method`: the full scoring rules, generated from the same rule table the scorer uses.
 - **Prompt** `investigate_address`: a step-by-step investigation plan that tells the assistant which tools to call, what to look for, and how to explain the result to a beginner.
 
-**Chains:** Ethereum, Base, Arbitrum One, Polygon PoS, and BNB Chain.
+**Chains:** Ethereum, Base, Arbitrum One, Polygon PoS, BNB Chain, and Arc
+(Circle's chain, where USDC is the native coin). Arc gets
+[extra checks](#arc-and-arc-safe-send).
 
 ## How it works
 
@@ -95,6 +107,9 @@ flowchart LR
     end
 
     server --> score
+    browser["Arc Safe Send page"] -->|"POST /api/check"| webapp["Web app<br/>cache, limits per visitor"]
+    webapp --> score
+    browser -.->|"user's own wallet signs"| arc["Arc mainnet<br/>USDC payment,<br/>RiskAttestation"]
     score --> wallet & token & contract & trace
     wallet & token & contract & trace --> findings["Findings<br/>(id, severity, reason, source)"]
     findings --> scorer["Rule-based scorer<br/>0-100 + reasons + confidence"]
@@ -103,7 +118,7 @@ flowchart LR
     http --> etherscan["Etherscan V2<br/>history, source code"]
     http --> goplus["GoPlus<br/>token and address security"]
     http --> dex["DexScreener<br/>pools and liquidity"]
-    http --> rpc["Public RPC nodes<br/>balance, code, proxy slots"]
+    http --> rpc["Public RPC nodes<br/>balance, code, proxy slots,<br/>Arc blocklists, payment test"]
     wallet & trace --> list["Local list<br/>known mixers and exploiters"]
 ```
 
@@ -121,6 +136,191 @@ A few design choices worth knowing:
 - **Findings, then scoring.** The analysis code only describes what it sees.
   A separate, pure scoring function turns findings into points. This keeps
   the score easy to test and easy to explain.
+
+## Arc and Arc Safe Send
+
+> **Arc Safe Send** is a risk check before you send USDC on Arc.
+> Arc is built for payments and agents. Safe Send is the check that runs
+> before money moves.
+
+**Live demo:** not deployed yet. Deploy it on Render's free plan with the
+steps in [Deploy the web app on Render](#deploy-the-web-app-on-render), then
+put the link here.
+
+![Arc Safe Send checking a wallet that Circle's USDC contract blocks](docs/images/arc-safe-send-blocked.png)
+
+Paste a wallet, token, or contract address on [Arc](https://docs.arc.io)
+(Circle's chain, chain ID 5042). You get the 0 to 100 risk score with a
+reason for every point and a confidence level. If you want to pay, the same
+page sends USDC from your own browser wallet. The same check is the MCP tool
+`score_risk` with `chain: "arc"`, so AI agents that pay in USDC can check
+the other side before they send.
+
+### What is checked on Arc
+
+| Check | How | Finding |
+|---|---|---|
+| Blocked by Circle | Reads `isBlacklisted(address)` on the USDC and EURC contracts for every address checked | `address.usdc_blocklisted`, `address.eurc_blocklisted` (80 points, decisive, same group as sanctions) |
+| Would a payment go through? | Simulates a 1 USDC payment with a read-only `eth_call` from a made-up sender. Nothing is sent or signed. | `send_check` in the result (it does not change the score) |
+| Links to blocked addresses | Fund tracing checks the addresses it finds against both blocklists | `trace.direct.blocklisted` (50), `trace.indirect.blocklisted` (12) |
+| Official Circle and Arc contracts | 13 contracts from the [official Arc contract list](https://docs.arc.io/arc/references/contract-addresses) are labelled | `address.official_contract` (-30, a trust signal) |
+| Everything else | Sanctions and scam labels (GoPlus), wallet age and history, token and contract checks, fund tracing | The same rules as on every other chain |
+
+Every data source answered for Arc in live checks on 3 October 2026:
+Etherscan V2 (chain 5042, including account history on the free plan),
+GoPlus (chain 5042), DexScreener (chain `arc`), and the Arc RPC nodes.
+
+### USDC decimals and the system emitter
+
+On Arc, USDC is the native coin and pays for gas. It has two views of one
+balance:
+
+| View | Decimals | Where you see it |
+|---|---|---|
+| Native | 18 | `eth_getBalance`, `msg.value`, plain sends |
+| ERC-20 | 6 | The contract at `0x3600000000000000000000000000000000000000` |
+
+They are the same money, so the tools never add them up, and every amount
+uses the native 18-decimal value.
+
+Every USDC move is logged once as a `Transfer` event by the system emitter
+`0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE` (EIP-7708), at 18 decimals.
+That covers plain sends, ERC-20 transfers, payouts from contracts, and bridge
+mints and burns. An ERC-20 transfer is also logged a second time by the USDC
+contract at 6 decimals, and Etherscan lists both. So on Arc:
+
+- Wallet profiles and fund traces read money flows only from the system
+  emitter stream (Etherscan `tokentx` filtered to the emitter address).
+- Plain transactions only add zero-value contract calls, so nothing is
+  counted twice.
+- Both duplicate USDC rows are removed from the token list, so USDC shows once.
+- Hop 2 of a trace follows the same stream.
+- A transfer from the zero address is a mint, for example USDC bridged in
+  with Circle's CCTP.
+
+Why it matters, from real data: one ordinary Arc wallet received 7,862.87
+USDC and bridged 7,862.43 USDC out through CCTP. Its plain transaction list
+shows these as zero-value calls to the USDC contract, so a tracer that read
+only transactions would see no money move. The system stream shows both
+flows, once each, in whole USDC. This is a test in `tests/test_arc.py` that
+replays recorded Arc mainnet responses.
+
+### Check, then pay
+
+![The payment box refusing to send to a blocked address](docs/images/arc-safe-send-pay-blocked.png)
+
+After a check on Arc, the page can send USDC from your own browser wallet
+(MetaMask, or any wallet that lets you add a network):
+
+- The server never sees a key and never signs anything. Your wallet shows the
+  payment before you approve it.
+- The page adds or switches your wallet to Arc (chain 5042) and pays the
+  exact address that was checked. If you edit the address, the old result
+  disappears.
+- Amounts become 18-decimal units with exact whole-number math (BigInt),
+  never floating point.
+- Sending is blocked when Arc would refuse the payment (a blocked address,
+  the zero address, or a contract that does not accept USDC), because a
+  refused payment still costs the fee.
+- High-risk addresses and contracts need a confirmation tick first.
+
+### Save a check on Arc
+
+[`contracts/`](contracts/) holds `RiskAttestation`, a tiny contract that
+keeps a public record of checks: the address, score, rule table version, a
+hash of the findings, the time, and who saved it. It has no owner and holds
+no money. When `ATTESTATION_CONTRACT` is set, the page shows **Save to Arc**
+and your own wallet signs the call. The findings hash is keccak256 of a short
+fixed text that anyone can rebuild from the result. Deploy steps with Arc
+Foundry are in [contracts/README.md](contracts/README.md).
+
+### For AI agents
+
+Agents use the same MCP server (see [Setup](#setup)). Call `score_risk` with
+`chain: "arc"`. On Arc the answer also has `send_check`. This is the real
+answer for the blocked wallet in the screenshot:
+
+```json
+"send_check": {
+  "would_succeed": false,
+  "reason": "Blocked address",
+  "explanation": "Arc would refuse a USDC payment to this address: the address is on the USDC blocklist. If you sent one, it would fail and you would still pay the fee. (This was only simulated: nothing was sent.)"
+}
+```
+
+### Run the web app yourself
+
+```bash
+uv sync --extra web
+uv run web3-risk-web            # then open http://127.0.0.1:8080
+```
+
+Or with Docker:
+
+```bash
+docker build -f Dockerfile.web -t arc-safe-send .
+docker run --rm -p 10000:10000 -e ETHERSCAN_API_KEY=your-key arc-safe-send
+```
+
+The API is one call. Interactive docs are at `/api/docs`.
+
+```bash
+curl -X POST http://127.0.0.1:8080/api/check \
+  -H "content-type: application/json" \
+  -d '{"address": "0x3600000000000000000000000000000000000000", "chain": "arc"}'
+```
+
+### Deploy the web app on Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/MelvTheGoat/web3-risk-mcp)
+
+1. Sign in at [render.com](https://render.com) with GitHub (the free plan is enough).
+2. Press the button above, or choose **New > Blueprint** and pick this repository.
+   Render reads [`render.yaml`](render.yaml) and builds [`Dockerfile.web`](Dockerfile.web).
+3. When asked, paste your free Etherscan API key. It is stored only in
+   Render's settings, never in the repository.
+4. Wait for the build (a few minutes), then open the `onrender.com` link
+   Render shows. Check `/healthz`, then try the three example buttons.
+
+The free API keys are protected: results are cached for 10 minutes (1 minute
+when a source failed), each visitor can run 6 new checks a minute and 40 an
+hour, everyone together can run 1,500 a day, and at most 3 run at once.
+Answers from the cache do not count. All of these are settings in
+[`.env.example`](.env.example).
+
+### What was tested, and how
+
+| What | How | Result |
+|---|---|---|
+| Arc logic | 19 tests that replay 70 recorded Arc mainnet responses, plus small tests with hand-made responses | Pass |
+| Web API | 18 tests on recorded data: blocked wallet, payment advice, cache, limits per visitor, bad input, failing sources | Pass |
+| Saved checks | 9 tests, including an event emitted by the real contract on a local Arc chain | Pass |
+| Page | Browser test (Chromium) with a mock wallet: a blocked wallet, a 12.5 USDC payment, bad amounts, the confirmation tick, phone width, dark mode | Pass |
+| Payment and Save to Arc, end to end | The page's wallet calls sent to a local Arc chain (`arc-anvil --network arc`, chain ID 5042) running the contract | 2.5 USDC arrived, and the saved record matched the page |
+| Contract | 8 Arc Foundry tests (with fuzzing) under standard rules, Arc rules, and on an Arc mainnet fork | Pass |
+| Web image | Built and run locally, with a live Arc check | Pass |
+| Not tested from here | A payment with a real wallet on Arc mainnet, the Render deployment, and the contract on mainnet. These need your own wallet and accounts. | Not run |
+
+### Limits on Arc
+
+- **Arc mainnet is young** (its first blocks are from May 2026). No Arc wallet
+  is old enough for the "long, active history" trust signal yet, and many
+  wallets will show "new wallet".
+- **No Arc addresses in the evaluation set yet.** The published evaluation
+  numbers come from 34 addresses on other chains. Arc addresses will be added
+  once they are checked by hand.
+- **Etherscan has no verified source for some Circle contracts on Arc**, so
+  they still get "source not verified" points. Circle's CCTP TokenMessengerV2
+  scores 38 (medium) even with the official-contract trust signal. EURC scores
+  15 (low) and USDC scores 0.
+- **The payment test uses a made-up sender**, so it cannot tell if *your*
+  address is blocked. If it is, Arc refuses the transaction before it is
+  sent, and no fee is charged.
+- **GoPlus may know less about a new chain** than about Ethereum.
+- **explorer.arc.io is not a data source.** Its API sits behind a browser
+  check, so the tools use Etherscan for Arc history.
+- **The free Render plan sleeps** after 15 minutes without visits. The first
+  check after that can take up to a minute.
 
 ## Setup
 
@@ -154,7 +354,7 @@ uvx web3-risk-mcp --version
 | `ETHERSCAN_API_KEY` | [etherscan.io/myapikey](https://etherscan.io/myapikey). One key covers every chain through the V2 API. | Yes, for wallet history, source code, and tracing |
 | `GOPLUS_APP_KEY`, `GOPLUS_APP_SECRET` | [gopluslabs.io](https://gopluslabs.io) developer dashboard | No. GoPlus works without a key, at lower limits. |
 | `RPC_URL_<CHAIN>` | Any provider, for example Alchemy or Infura | No. Free public nodes are the default. |
-| DexScreener | No key | – |
+| DexScreener | No key | Not needed |
 
 Settings are read from environment variables. With the quick start, you put
 them in the `env` block of your client's config (shown below). When you run
@@ -357,7 +557,7 @@ learning and no hidden weighting.
    controls this". Together they add at most 30 points. Regulated stablecoins
    have all of these powers and are not scams. Scam-specific signals, such as
    honeypots, tax tricks, and hidden owners, are not capped.
-5. The total is clamped to 0–100.
+5. The total is clamped to 0 to 100.
 6. **Decisive findings** set a **floor of 75**, so trust signals can never
    hide them. Decisive means evidence of fraud or harm, not just the ability
    to cause it: a honeypot, a sanctioned or exploiter address, phishing, a
@@ -365,10 +565,10 @@ learning and no hidden weighting.
 
 | Score | Level | Meaning |
 |---|---|---|
-| 75–100 | critical | Very likely dangerous. Do not interact. |
-| 50–74 | high | Serious red flags. Avoid unless you fully understand the risks. |
-| 20–49 | medium | Some warning signs. Look closely before interacting. |
-| 0–19 | low | No major red flags in the data we could check. |
+| 75 to 100 | critical | Very likely dangerous. Do not interact. |
+| 50 to 74 | high | Serious red flags. Avoid unless you fully understand the risks. |
+| 20 to 49 | medium | Some warning signs. Look closely before interacting. |
+| 0 to 19 | low | No major red flags in the data we could check. |
 
 Each score also has a **confidence** (high, medium, or low) based on how many
 data sources answered. Every contribution lists its points, its reason, its
@@ -469,7 +669,9 @@ to tune the rules.
   the busiest paths only. Old or low-volume activity can be missed.
 - **Bytecode scanning is a heuristic.** It finds known function signatures in
   unverified contracts. Renamed or custom functions can slip through.
-- **Etherscan free plan.** No account history on Base or BNB Chain without a paid plan.
+- **Etherscan free plan.** No account history on Base or BNB Chain without a
+  paid plan. Arc is included in the free plan.
+- **Arc.** See [Limits on Arc](#limits-on-arc).
 - **Small local list.** The built-in list of known bad addresses is short and
   hand-checked on purpose. GoPlus provides the broad coverage.
 - **EVM only.** No Solana, Bitcoin, or other non-EVM chains.
@@ -478,15 +680,19 @@ to tune the rules.
 ## Development
 
 ```bash
-uv sync                      # install everything, including dev tools
-uv run pytest                # 100+ tests; all HTTP is mocked, no keys needed
+uv sync --all-extras         # install everything, including dev tools and the web app
+uv run pytest                # 170 tests; all HTTP is mocked or replayed, no keys needed
 uv run ruff check .          # lint
 uv run ruff format .         # format
 uv run python scripts/render_method_doc.py   # rebuild docs/risk-method.md after changing rules
+uv run python -m tests.arc_fixtures --add-missing   # record new Arc responses (needs a key)
+
+cd contracts && arc-forge test && FOUNDRY_PROFILE=arc arc-forge test   # contract tests
 ```
 
-CI runs lint, format checks, and tests on Python 3.11, 3.12, and 3.13, and
-builds the Docker image on every push.
+CI runs lint, format checks, and tests on Python 3.11, 3.12, and 3.13, builds
+and starts both Docker images (MCP server and web app), and runs the contract
+tests with Arc Foundry on every push.
 
 ```
 src/web3_risk_mcp/
@@ -502,7 +708,13 @@ src/web3_risk_mcp/
 ├── prompts.py         investigate_address prompt text
 ├── labels.py          lookup for the local address list
 ├── evaluation.py      metrics and record/replay for the evaluation
+├── attestation.py     findings hash and call data for the RiskAttestation contract
+├── web/               Arc Safe Send: FastAPI app, page, limits, payment advice
 └── data/known_addresses.json
+
+contracts/             RiskAttestation contract, tests, and deploy script (Arc Foundry)
+render.yaml            one-click deploy of the web app on Render
+Dockerfile.web         image for the web app (Dockerfile is the MCP server)
 ```
 
 ## Glossary
@@ -521,6 +733,12 @@ src/web3_risk_mcp/
 - **Mixer**: a service that pools and mixes funds to hide where they came from.
 - **Verified source**: the author published the source code and the block explorer confirmed it matches the code on chain.
 - **Function selector**: a 4-byte fingerprint of a function's name and inputs, stored in the contract's bytecode.
+- **Arc**: Circle's own EVM chain (chain ID 5042). Fees are paid in USDC, and transactions are final in under a second.
+- **Native USDC on Arc**: USDC is Arc's built-in coin, with 18 decimals. The same balance also appears through an ERC-20 contract with 6 decimals.
+- **System emitter (EIP-7708)**: a special address on Arc that logs a `Transfer` event for every USDC move, so plain sends can be tracked like token transfers.
+- **Blocklist**: a list kept by a stablecoin's issuer (here Circle). A blocked address cannot send or receive that coin.
+- **CCTP**: Circle's Cross-Chain Transfer Protocol. It moves USDC between chains by burning it on one chain and minting it on another.
+- **Attestation**: a signed, public record of a claim. Here, "this address scored N under rule table version V", saved on Arc.
 
 ## License
 
