@@ -1,0 +1,45 @@
+# Arc Safe Send: the web app (page + POST /api/check).
+# The MCP server image is the other Dockerfile in this folder.
+#
+#   docker build -f Dockerfile.web -t arc-safe-send .
+#   docker run --rm -p 10000:10000 --env-file .env arc-safe-send
+#
+# Build stage: install the project with the "web" extra (FastAPI, uvicorn).
+FROM python:3.12-slim-bookworm AS builder
+
+RUN pip install --no-cache-dir "uv==0.8.17"
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
+
+WORKDIR /app
+
+# Install dependencies first, so this layer is cached when only code changes.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --extra web --no-install-project
+
+COPY README.md LICENSE ./
+COPY src ./src
+RUN uv sync --locked --no-dev --extra web
+
+
+# Runtime stage: a small image with only what is needed to run.
+FROM python:3.12-slim-bookworm
+
+# Run as a normal user, not root.
+RUN useradd --create-home --uid 10001 app
+WORKDIR /app
+COPY --from=builder --chown=app:app /app /app
+
+# Render sets PORT for you (10000 by default). API keys come only from
+# environment variables set in the host's dashboard, never from the image.
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    WEB_HOST=0.0.0.0 \
+    PORT=10000
+
+USER app
+EXPOSE 10000
+
+CMD ["web3-risk-web"]

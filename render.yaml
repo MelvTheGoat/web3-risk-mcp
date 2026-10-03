@@ -1,0 +1,31 @@
+# One-click deploy of Arc Safe Send on Render's free plan.
+#
+# In Render: New > Blueprint, then pick this repository. Render builds
+# Dockerfile.web and asks you for ETHERSCAN_API_KEY. The key is stored only
+# in Render's settings, never in this repository.
+#
+# Optional settings you can add later under the service's "Environment" tab:
+#   GOPLUS_APP_KEY, GOPLUS_APP_SECRET   higher GoPlus limits (it works without them)
+#   ATTESTATION_CONTRACT                your RiskAttestation address on Arc
+#   WEB_CHECKS_PER_MINUTE, WEB_CHECKS_PER_HOUR, WEB_CHECKS_PER_DAY
+#
+# The free plan sleeps after 15 minutes without visits. The first check after
+# that takes up to about a minute while it wakes up.
+services:
+  - type: web
+    name: arc-safe-send
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: ETHERSCAN_API_KEY
+        sync: false
+      # Render sits behind Cloudflare, which puts the visitor's real IP in
+      # this header. The per-visitor limits use it. (X-Forwarded-For is not
+      # used because a visitor can add fake entries to it.)
+      - key: WEB_CLIENT_IP_HEADER
+        value: true-client-ip
+      - key: LOG_LEVEL
+        value: INFO

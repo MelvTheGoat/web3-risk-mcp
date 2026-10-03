@@ -19,7 +19,7 @@ jobs:
           enable-cache: true
 
       - name: Install Python and dependencies
-        run: uv sync --locked --python ${{ matrix.python-version }}
+        run: uv sync --locked --all-extras --python ${{ matrix.python-version }}
 
       - name: Lint
         run: uv run ruff check .
@@ -43,6 +43,9 @@ jobs:
       - name: Check the built package installs and starts
         run: uvx --isolated --from dist/*.whl web3-risk-mcp --version
 
+      - name: Check the web app installs from the package
+        run: uvx --isolated --from "$(ls dist/*.whl)[web]" web3-risk-web --help
+
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -56,3 +59,18 @@ jobs:
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
             | timeout 20 docker run -i --rm web3-risk-mcp --transport stdio \
             | grep -q '"serverInfo"'
+
+      - name: Build web app image
+        run: docker build -f Dockerfile.web -t arc-safe-send .
+
+      - name: Check the web app starts and serves its page
+        run: |
+          docker run -d --rm --name safe-send -p 10000:10000 arc-safe-send
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:10000/healthz; then
+              curl -sf http://127.0.0.1:10000/ | grep -q "Arc Safe Send" && exit 0
+            fi
+            sleep 1
+          done
+          docker logs safe-send
+          exit 1
