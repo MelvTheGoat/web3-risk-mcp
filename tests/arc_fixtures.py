@@ -6,11 +6,16 @@ network. The cassette never stores API keys.
 
 To record the responses again (needs ETHERSCAN_API_KEY in .env):
     uv run python -m tests.arc_fixtures
+
+To keep the saved responses and only add requests that are missing (for
+example after adding a new check), so existing test numbers do not move:
+    uv run python -m tests.arc_fixtures --add-missing
 """
 
 from __future__ import annotations
 
 import asyncio
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -21,7 +26,7 @@ from web3_risk_mcp.analysis.trace import trace_funds
 from web3_risk_mcp.analysis.wallet import get_wallet_profile
 from web3_risk_mcp.chains import get_chain
 from web3_risk_mcp.config import Settings, get_settings
-from web3_risk_mcp.evaluation import Cassette, RecordingTransport
+from web3_risk_mcp.evaluation import Cassette, RecordingTransport, request_key
 from web3_risk_mcp.services import Services
 
 CASSETTE = Path(__file__).resolve().parent / "fixtures" / "arc_cassette.json.gz"
@@ -48,17 +53,35 @@ async def run_all(services: Services) -> None:
     await score_risk(services, ARC, USDC, now=RECORDED_AT)
 
 
-async def _record() -> None:
+class _AddMissingTransport(RecordingTransport):
+    """Answers from the cassette when it can, and records only what is missing."""
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        entry = self.cassette.entries.get(request_key(request))
+        if entry is not None:
+            return httpx.Response(
+                entry["status"],
+                content=entry["body"].encode(),
+                headers={"content-type": "application/json"},
+            )
+        return await super().handle_async_request(request)
+
+
+async def _record(add_missing: bool) -> None:
     settings: Settings = get_settings()
     if not Settings.secret(settings.etherscan_api_key):
         raise SystemExit("Set ETHERSCAN_API_KEY in .env first.")
     cassette = Cassette(CASSETTE)
-    cassette.entries = {}
-    async with httpx.AsyncClient(transport=RecordingTransport(cassette)) as client:
+    before = len(cassette.entries)
+    if not add_missing:
+        cassette.entries = {}
+    transport = (_AddMissingTransport if add_missing else RecordingTransport)(cassette)
+    async with httpx.AsyncClient(transport=transport) as client:
         await run_all(Services(settings, client=client))
     cassette.save()
-    print(f"Saved {len(cassette.entries)} responses to {CASSETTE}")
+    added = len(cassette.entries) - (before if add_missing else 0)
+    print(f"Saved {len(cassette.entries)} responses ({added} new) to {CASSETTE}")
 
 
 if __name__ == "__main__":
-    asyncio.run(_record())
+    asyncio.run(_record(add_missing="--add-missing" in sys.argv))

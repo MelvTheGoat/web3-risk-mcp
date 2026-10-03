@@ -10,7 +10,13 @@ from pydantic import Field
 
 from web3_risk_mcp import labels
 from web3_risk_mcp.analysis.address import address_findings
-from web3_risk_mcp.analysis.arc import BLOCKLIST_SOURCE, blocklist_findings, blocklisted_by
+from web3_risk_mcp.analysis.arc import (
+    BLOCKLIST_SOURCE,
+    SendCheck,
+    blocklist_findings,
+    blocklisted_by,
+    send_check,
+)
 from web3_risk_mcp.analysis.common import Collector
 from web3_risk_mcp.analysis.contract import inspect_contract
 from web3_risk_mcp.analysis.token import check_token_risk
@@ -34,6 +40,11 @@ class RiskScore(ScoreResult):
     sources: list[SourceStatus] = Field(default_factory=list)
     rules_version: int = Field(
         default=RULES_VERSION, description="Version of the rule table that made this score."
+    )
+    send_check: SendCheck | None = Field(
+        default=None,
+        description="Arc only: would a USDC payment to this address go through? "
+        "Simulated, nothing is sent. It does not change the score.",
     )
     method: str = Field(
         default="Read the resource risk://scoring-method for the full rule table.",
@@ -75,7 +86,14 @@ async def score_risk(
 ) -> RiskScore:
     now = now or datetime.now(UTC)
     c = Collector()
-    code = await c.run("RPC", services.rpc.code(chain, address))
+    code_call = c.run("RPC", services.rpc.code(chain, address))
+    if chain.native_transfer_emitter:
+        # Arc: also test whether a USDC payment to this address would go through.
+        code, payment = await asyncio.gather(
+            code_call, c.run("RPC", send_check(services, chain, address))
+        )
+    else:
+        code, payment = await code_call, None
 
     reports: dict[str, Report] = {}
     if code is not None and is_contract_code(code):
@@ -114,6 +132,8 @@ async def score_risk(
     notes = list(dict.fromkeys(n for r in reports.values() for n in r.notes))
     if code is None:
         gaps.insert(0, f"Could not tell if this is a wallet or a contract: {c.error('RPC')}")
+    if chain.native_transfer_emitter and payment is None:
+        gaps.append(f"Could not test a {chain.native_symbol} payment to this address.")
 
     result = score_findings(findings, sources)
     return RiskScore(
@@ -125,6 +145,7 @@ async def score_risk(
         data_gaps=gaps,
         notes=notes,
         sources=sources,
+        send_check=payment,
     )
 
 

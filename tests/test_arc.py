@@ -30,6 +30,8 @@ from web3_risk_mcp.analysis.score import score_risk
 from web3_risk_mcp.analysis.trace import trace_funds
 from web3_risk_mcp.analysis.wallet import get_wallet_profile
 from web3_risk_mcp.chains import ARC_SYSTEM_EMITTER, get_chain
+from web3_risk_mcp.clients.rpc import SIMULATION_SENDER
+from web3_risk_mcp.errors import SourceError
 from web3_risk_mcp.evaluation import Cassette, ReplayTransport
 from web3_risk_mcp.models import Finding, SourceStatus
 from web3_risk_mcp.scoring import (
@@ -81,6 +83,10 @@ async def test_wallet_blocked_by_usdc_and_eurc_scores_critical(replay):
     assert by_id["address.sanctioned"].counted is True
     assert "Blocklist" in {s.source for s in result.sources}
     assert result.rules_version == RULES_VERSION
+    # A simulated 1 USDC payment is refused by Arc itself.
+    assert result.send_check.would_succeed is False
+    assert result.send_check.reason == "Blocked address"
+    assert "blocklist" in result.send_check.explanation
 
 
 async def test_wallet_profile_reads_usdc_from_the_system_stream(replay):
@@ -138,6 +144,8 @@ async def test_ordinary_arc_wallet_scores_low(replay):
     assert result.score == 10
     assert [c.finding_id for c in result.contributions if c.points] == ["wallet.very_new"]
     assert result.confidence == "high"
+    assert result.send_check.would_succeed is True
+    assert "nothing was sent" in result.send_check.explanation
 
 
 @pytest.mark.parametrize(("token", "score"), [(USDC, 0), (EURC, 15)])
@@ -149,6 +157,12 @@ async def test_token_is_not_flagged_by_its_own_blocklist(replay, token, score):
     assert result.address_type == "token"
     assert not [c for c in result.contributions if c.finding_id.endswith("_blocklisted")]
     assert result.score == score
+    # But a USDC payment to either contract is refused: USDC blocks its own
+    # address, and the EURC contract does not accept plain USDC.
+    assert result.send_check.would_succeed is False
+    assert result.send_check.reason == (
+        "Blocked address" if token == USDC else "execution reverted"
+    )
 
 
 # --- One rule at a time, with hand-made responses ------------------------------
@@ -371,3 +385,30 @@ def test_official_arc_contract_gets_a_trust_signal():
     assert RULES["address.official_contract"].points < 0
     # Labels from other sources (like an exchange wallet) are not "official".
     assert labels.lookup("ethereum", "0x28c6c06298d514db089934071355e5743bf21d60").official is False
+
+
+@respx.mock
+async def test_payment_simulation_uses_a_made_up_funded_sender(services):
+    seen = []
+
+    def eth_call(params):
+        seen.append(params)
+        return "0x"
+
+    mock_rpc(ARC, {"eth_call": eth_call})
+
+    assert await services.rpc.simulate_transfer(ARC, FRIEND, 10**18) is None
+    call, block, override = seen[0]
+    assert call == {"from": SIMULATION_SENDER, "to": FRIEND, "value": hex(10**18)}
+    assert block == "latest"
+    assert int(override[SIMULATION_SENDER]["balance"], 16) >= 10**18
+
+
+@respx.mock
+async def test_payment_refusal_is_an_answer_but_a_node_outage_is_a_failure(services):
+    answers = iter([RuntimeError("Zero address not allowed"), RuntimeError("upstream timeout")])
+    mock_rpc(ARC, {"eth_call": lambda _params: next(answers)})
+
+    assert await services.rpc.simulate_transfer(ARC, ZERO, 1) == "Zero address not allowed"
+    with pytest.raises(SourceError, match="upstream timeout"):
+        await services.rpc.simulate_transfer(ARC, FRIEND, 1)

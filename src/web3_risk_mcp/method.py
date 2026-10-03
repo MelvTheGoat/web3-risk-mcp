@@ -95,6 +95,14 @@ different there, and the tools handle each one:
 - **Two views of one balance.** The native balance (18 decimals) and the
   ERC-20 balance (6 decimals) are the same money. The tools always use the
   native value and never add the two.
+- **Payment test.** `score_risk` also simulates a 1 USDC payment to the
+  address with a read-only `eth_call` (nothing is sent or signed) and
+  reports in `send_check` whether Arc would accept it. Arc refuses payments
+  to blocked addresses, to the zero address, and to contracts that do not
+  accept USDC. This test does not change the score.
+- **Official contracts.** Circle and Arc contracts from the official Arc
+  contract list get the trust signal `address.official_contract`. Their
+  control risks (for example "one wallet can upgrade it") still count.
 
 ## Limits of this method
 

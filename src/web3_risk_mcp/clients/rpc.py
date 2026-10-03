@@ -55,6 +55,32 @@ def _validate(body: Any) -> None:
         raise SourceError(NAME, "Node response has no result.")
 
 
+# A made-up sender used only inside simulations. eth_call never sends
+# anything, and the balance we give it exists only inside that one call.
+SIMULATION_SENDER = "0x000000000000000000000000000000000000beef"
+_SIMULATION_BALANCE = hex(10**30)
+
+# Node errors that mean "the transfer itself was refused", as opposed to the
+# node being down or busy. Arc answers "Blocked address" for blocklisted
+# addresses and "Zero address not allowed" for the zero address.
+_REFUSAL_WORDS = ("revert", "blocked address", "not allowed")
+
+
+def _validate_simulation(body: Any) -> None:
+    """Like _validate, but a refused transfer is an answer, not a failure."""
+    if not isinstance(body, dict):
+        raise SourceError(NAME, "Unexpected response shape.")
+    error = body.get("error")
+    if not error:
+        if "result" not in body:
+            raise SourceError(NAME, "Node response has no result.")
+        return
+    message = str(error.get("message") if isinstance(error, dict) else error)
+    if not any(word in message.lower() for word in _REFUSAL_WORDS):
+        retryable = "rate" in message.lower() or "limit" in message.lower()
+        raise SourceError(NAME, f"Node returned an error: {message}", retryable=retryable)
+
+
 def hex_to_int(value: str | None) -> int:
     if not value or value == "0x":
         return 0
@@ -97,16 +123,20 @@ class RpcClient:
     def url_for(self, chain: Chain) -> str:
         return self.settings.rpc_override(chain.key) or chain.default_rpc_url
 
-    async def call(self, chain: Chain, method: str, params: list[Any]) -> Any:
+    async def _request(
+        self, chain: Chain, method: str, params: list[Any], validate=_validate
+    ) -> dict[str, Any]:
         if method not in READ_ONLY_METHODS:
             raise SourceError(NAME, f"Method {method} is not allowed. This server is read-only.")
-        body = await self.http.request_json(
+        return await self.http.request_json(
             "POST",
             self.url_for(chain),
             json_body={"jsonrpc": "2.0", "method": method, "params": params, "id": 1},
-            validate=_validate,
+            validate=validate,
         )
-        return body["result"]
+
+    async def call(self, chain: Chain, method: str, params: list[Any]) -> Any:
+        return (await self._request(chain, method, params))["result"]
 
     async def balance(self, chain: Chain, address: str) -> int:
         """Native coin balance in wei (1 ETH = 10^18 wei)."""
@@ -126,6 +156,28 @@ class RpcClient:
     async def eth_call(self, chain: Chain, to: str, data: str) -> str:
         """Run a read-only function on a contract without creating a transaction."""
         return await self.call(chain, "eth_call", [{"to": to, "data": data}, "latest"])
+
+    async def simulate_transfer(self, chain: Chain, to: str, value_wei: int) -> str | None:
+        """Pretend to send `value_wei` of the native coin to `to`. Nothing is sent.
+
+        This is a plain eth_call from a made-up sender that is given a balance
+        for this one call only (a "state override"). Returns None if the
+        transfer would go through, or the node's reason if it would be refused.
+        """
+        body = await self._request(
+            chain,
+            "eth_call",
+            [
+                {"from": SIMULATION_SENDER, "to": to, "value": hex(value_wei)},
+                "latest",
+                {SIMULATION_SENDER: {"balance": _SIMULATION_BALANCE}},
+            ],
+            validate=_validate_simulation,
+        )
+        error = body.get("error")
+        if not error:
+            return None
+        return str(error.get("message") if isinstance(error, dict) else error)
 
     async def is_blocklisted(self, chain: Chain, token: str, address: str) -> bool:
         """Ask a Circle stablecoin contract (USDC or EURC) if it blocks an address."""
