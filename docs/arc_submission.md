@@ -78,7 +78,7 @@ Tips:
 |---|---|---|
 | Deployed and working on Arc mainnet at the time you submit | Not yet | Deploy the RiskAttestation contract (contracts/README.md) and the web app (README, "Deploy the web app on Render"). Make one real payment and one saved check on mainnet. |
 | A live deployment with a link reviewers can open | Not yet | Use the Render link. Check that it loads, that `/healthz` answers, and that the three example buttons work. |
-| A public repo | Done | https://github.com/MelvTheGoat/web3-risk-mcp (the Arc work is on the `arc-microgrant` branch; move `main` up to it before you submit, so reviewers see it first). |
+| A public repo | Done | https://github.com/MelvTheGoat/web3-risk-mcp (everything is on `main`). |
 | A short description of what it does and what it uses Arc for | Done | Section 1 above. |
 | A public builder profile (GitHub, X, or Farcaster) | Done | https://github.com/MelvTheGoat |
 | Not a mockup, slide deck, or testnet-only build | Done once deployed | Everything runs on Arc mainnet data; the contract and payments must be on mainnet. |
