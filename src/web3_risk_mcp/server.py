@@ -39,6 +39,8 @@ INSTRUCTIONS = """\
 This server investigates EVM wallets, tokens, and smart contracts for risk.
 It is read-only: it never asks for private keys and never signs or sends transactions.
 Start with score_risk for a quick verdict, then use the other tools for detail.
+On Arc (chain 5042), where USDC is the native coin, call score_risk before sending USDC:
+it also reads the USDC and EURC blocklists, and a transfer to a blocked address fails.
 Always tell the user which data sources failed (see `sources` and `data_gaps`):
 missing data is not proof that something is safe.
 """

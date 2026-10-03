@@ -24,6 +24,10 @@ EIP1967_IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a
 EIP1967_ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
 EIP1967_BEACON_SLOT = "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50"
 
+# isBlacklisted(address): the public read function on Circle's USDC and EURC
+# contracts. It returns true if the address is on the token's blocklist.
+IS_BLACKLISTED_SELECTOR = "0xfe575a87"
+
 # Only these methods are allowed. This is a second safety net on top of the
 # code simply never calling anything else.
 READ_ONLY_METHODS = frozenset(
@@ -122,3 +126,8 @@ class RpcClient:
     async def eth_call(self, chain: Chain, to: str, data: str) -> str:
         """Run a read-only function on a contract without creating a transaction."""
         return await self.call(chain, "eth_call", [{"to": to, "data": data}, "latest"])
+
+    async def is_blocklisted(self, chain: Chain, token: str, address: str) -> bool:
+        """Ask a Circle stablecoin contract (USDC or EURC) if it blocks an address."""
+        data = IS_BLACKLISTED_SELECTOR + address.lower().removeprefix("0x").rjust(64, "0")
+        return hex_to_int(await self.eth_call(chain, token, data)) != 0

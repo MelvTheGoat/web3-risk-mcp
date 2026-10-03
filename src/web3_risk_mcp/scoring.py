@@ -34,6 +34,11 @@ from web3_risk_mcp.models import Finding, Severity, SourceStatus
 Level = Literal["low", "medium", "high", "critical"]
 DECISIVE_FLOOR = 75
 
+# The version of the rule table below. Raise it by one whenever any rule,
+# cap, or floor changes, so a saved score always says which rules made it.
+# A test fails if the table changes without a new version.
+RULES_VERSION = 2
+
 # Groups that describe owner control rather than fraud, and their shared cap.
 OWNER_POWER_GROUPS = frozenset(
     {"mint", "blacklist", "pause", "upgradeable", "limits", "withdraw", "single_owner"}
@@ -81,6 +86,10 @@ RULES: dict[str, Rule] = {
     "address.malicious_contracts_created": Rule(50),
     "address.honeypot_related_address": Rule(40),
     "address.honeypot_related_token": Rule(0),
+    # Blocked by Circle's USDC or EURC contract (read on Arc). Circle blocks
+    # addresses for reasons such as sanctions, so it shares the sanctions group.
+    "address.usdc_blocklisted": Rule(80, "sanctioned", decisive=True),
+    "address.eurc_blocklisted": Rule(80, "sanctioned", decisive=True),
     "address.fake_token": Rule(40),
     "address.known_mixer": Rule(40, "mixer"),
     "address.mixer": Rule(30, "mixer"),
@@ -153,11 +162,13 @@ RULES: dict[str, Rule] = {
     "trace.direct.scam": Rule(40, "direct_link"),
     "trace.direct.mixer": Rule(30, "direct_link"),
     "trace.direct.flagged": Rule(30, "direct_link"),
+    "trace.direct.blocklisted": Rule(50, "direct_link"),
     "trace.indirect.sanctioned": Rule(15, "indirect_link"),
     "trace.indirect.exploit": Rule(10, "indirect_link"),
     "trace.indirect.scam": Rule(10, "indirect_link"),
     "trace.indirect.mixer": Rule(8, "indirect_link"),
     "trace.indirect.flagged": Rule(8, "indirect_link"),
+    "trace.indirect.blocklisted": Rule(12, "indirect_link"),
 }
 
 # Risky-function findings ("contract.fn.<category>") use SEVERITY_POINTS, and

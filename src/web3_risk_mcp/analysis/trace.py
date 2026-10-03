@@ -7,6 +7,10 @@ next step out from those addresses.
 We only follow the busiest paths and we only look at recent history, so the
 trace is a sample, not a full audit. Every node is checked against our local
 list of known bad addresses, and the closest ones are also checked with GoPlus.
+
+On Arc, money is USDC and every USDC move is in the system Transfer stream,
+so that stream is where the trace reads value from. Nodes are also checked
+against the USDC and EURC blocklists.
 """
 
 from __future__ import annotations
@@ -18,6 +22,13 @@ from typing import Any, Literal
 
 from web3_risk_mcp import labels
 from web3_risk_mcp.analysis.address import GOPLUS_ADDRESS_FLAGS, goplus_flags
+from web3_risk_mcp.analysis.arc import (
+    BLOCKLIST_SOURCE,
+    arc_history_note,
+    blocklisted_by,
+    other_tokens,
+    without_value,
+)
 from web3_risk_mcp.analysis.common import Collector, wei_to_coin
 from web3_risk_mcp.chains import Chain
 from web3_risk_mcp.models import Finding, FlowEdge, FundTrace, RiskyLink, Severity, TraceNode
@@ -29,6 +40,7 @@ ROOT_HISTORY_LIMIT = 100
 HOP2_HISTORY_LIMIT = 50
 HOP2_FANOUT = 3
 GOPLUS_SCREEN_LIMIT = 6
+BLOCKLIST_SCREEN_LIMIT = 12
 
 # Following money through these tells us nothing: they touch everyone.
 _DO_NOT_EXPAND = frozenset({"exchange", "protocol", "burn"})
@@ -40,6 +52,8 @@ _CATEGORY_SEVERITY: dict[str, tuple[Severity, Severity]] = {
     "scam": ("high", "medium"),
     "mixer": ("high", "medium"),
 }
+# A node blocked by a stablecoin contract (USDC or EURC on Arc).
+_BLOCKLISTED_SEVERITY: tuple[Severity, Severity] = ("high", "medium")
 
 
 @dataclass
@@ -138,11 +152,25 @@ async def trace_funds(
     graph = _Graph()
     graph.nodes[address] = TraceNode(address=address, hop=0, expanded=True)
 
-    txs, internal, tokens = await asyncio.gather(
-        c.run("Etherscan", es.transactions(chain, address, limit=ROOT_HISTORY_LIMIT)),
-        c.run("Etherscan", es.internal_transactions(chain, address, limit=ROOT_HISTORY_LIMIT)),
-        c.run("Etherscan", es.token_transfers(chain, address, limit=ROOT_HISTORY_LIMIT)),
-    )
+    logs_native_moves = chain.native_transfer_emitter is not None
+    if logs_native_moves:
+        txs, native, tokens = await asyncio.gather(
+            c.run("Etherscan", es.transactions(chain, address, limit=ROOT_HISTORY_LIMIT)),
+            c.run("Etherscan", es.native_transfers(chain, address, limit=ROOT_HISTORY_LIMIT)),
+            c.run("Etherscan", es.token_transfers(chain, address, limit=ROOT_HISTORY_LIMIT)),
+        )
+        # Value comes only from the system Transfer stream. Plain transactions add
+        # only contract calls, and USDC is removed from the token list, so no move
+        # is counted twice.
+        value_lists = [without_value(txs or []), native or []]
+        tokens = other_tokens(chain, tokens or [])
+    else:
+        txs, internal, tokens = await asyncio.gather(
+            c.run("Etherscan", es.transactions(chain, address, limit=ROOT_HISTORY_LIMIT)),
+            c.run("Etherscan", es.internal_transactions(chain, address, limit=ROOT_HISTORY_LIMIT)),
+            c.run("Etherscan", es.token_transfers(chain, address, limit=ROOT_HISTORY_LIMIT)),
+        )
+        value_lists = [txs or [], internal or []]
     if c.failed("Etherscan"):
         trace.data_gaps.append(
             f"Transaction history could not be loaded, so funds were not traced. "
@@ -151,7 +179,7 @@ async def trace_funds(
         trace.sources = c.statuses
         return trace
 
-    root_flows = flows(address, txs or [], internal or [], tokens=tokens or [])
+    root_flows = flows(address, *value_lists, tokens=tokens or [])
     hop1 = _pick(root_flows, direction, max_per_hop)
     hop1 += [
         a for a in root_flows if a not in hop1 and labels.is_risky(labels.lookup(chain.key, a))
@@ -167,9 +195,12 @@ async def trace_funds(
         for a in hop1:
             if a not in expandable:
                 graph.nodes[a].note = "Not followed further (exchange, protocol, burn, or limit)."
+        # On Arc, plain transactions miss USDC sent through the ERC-20 interface,
+        # so hop 2 follows the USDC Transfer stream instead.
+        next_history = es.native_transfers if logs_native_moves else es.transactions
         histories = await asyncio.gather(
             *(
-                c.run("Etherscan", es.transactions(chain, a, limit=HOP2_HISTORY_LIMIT))
+                c.run("Etherscan", next_history(chain, a, limit=HOP2_HISTORY_LIMIT))
                 for a in expandable
             )
         )
@@ -204,6 +235,8 @@ async def trace_funds(
         )
     if c.failed("GoPlus"):
         trace.data_gaps.append(f"GoPlus screening failed. Reason: {c.error('GoPlus')}")
+    if chain.blocklist_tokens:
+        await _screen_blocklists(services, chain, graph, c, trace)
 
     trace.nodes = sorted(graph.nodes.values(), key=lambda n: (n.hop, n.address))
     trace.edges = graph.edges
@@ -213,8 +246,37 @@ async def trace_funds(
         f"Based on the latest {ROOT_HISTORY_LIMIT} transactions of each kind for the start "
         f"address and {HOP2_HISTORY_LIMIT} for hop-2 addresses. Older activity is not included."
     )
+    if logs_native_moves:
+        trace.notes.append(arc_history_note(chain))
     trace.sources = c.statuses
     return trace
+
+
+async def _screen_blocklists(
+    services: Services, chain: Chain, graph: _Graph, c: Collector, trace: FundTrace
+) -> None:
+    """Check traced addresses against the USDC and EURC blocklists (Arc).
+
+    Addresses already on our local list (Circle contracts, exchanges, and so
+    on) are skipped, and the number checked is capped to keep the trace fast.
+    """
+    unknown = [n.address for n in graph.nodes.values() if n.hop >= 1 and n.label is None]
+    to_check = unknown[:BLOCKLIST_SCREEN_LIMIT]
+    results = await asyncio.gather(
+        *(c.run(BLOCKLIST_SOURCE, blocklisted_by(services, chain, a)) for a in to_check)
+    )
+    for a, blocked in zip(to_check, results, strict=True):
+        graph.nodes[a].blocklisted_by = blocked or []
+    names = " and ".join(symbol for symbol, _ in chain.blocklist_tokens)
+    if len(unknown) > len(to_check):
+        trace.data_gaps.append(
+            f"{len(unknown) - len(to_check)} address(es) were not checked against the "
+            f"{names} blocklists, to keep the trace fast."
+        )
+    if c.failed(BLOCKLIST_SOURCE):
+        trace.data_gaps.append(
+            f"The {names} blocklists could not be read. Reason: {c.error(BLOCKLIST_SOURCE)}"
+        )
 
 
 def _add_node(graph: _Graph, chain: Chain, address: str, *, hop: int, parent: str) -> None:
@@ -281,6 +343,7 @@ def _risky_links(graph: _Graph, root: str) -> list[RiskyLink]:
         if node.label_category in _CATEGORY_SEVERITY:
             reasons.append(f"{node.label} ({node.label_category})")
         reasons += [f"GoPlus: {GOPLUS_ADDRESS_FLAGS[f][1]}" for f in node.security_flags]
+        reasons += [f"blocked by the {symbol} contract" for symbol in node.blocklisted_by]
         if reasons:
             links.append(
                 RiskyLink(
@@ -293,6 +356,9 @@ def _risky_links(graph: _Graph, root: str) -> list[RiskyLink]:
             )
     links.sort(key=lambda link: link.hop)
     return links
+
+
+_KIND_SOURCE = {"flagged": "GoPlus", "blocklisted": "stablecoin blocklist (RPC)"}
 
 
 def _findings(links: list[RiskyLink], graph: _Graph) -> list[Finding]:
@@ -310,6 +376,9 @@ def _findings(links: list[RiskyLink], graph: _Graph) -> list[Finding]:
             if node.hop == 2:
                 sev = {"critical": "high", "high": "medium"}.get(sev, "low")
             kinds.append(("flagged", sev))
+        if node.blocklisted_by:
+            sev1, sev2 = _BLOCKLISTED_SEVERITY
+            kinds.append(("blocklisted", sev1 if node.hop == 1 else sev2))
         for kind, severity in kinds:
             level = "direct" if node.hop == 1 else "indirect"
             fid = f"trace.{level}.{kind}"
@@ -320,7 +389,7 @@ def _findings(links: list[RiskyLink], graph: _Graph) -> list[Finding]:
                 title=f"{'Direct' if node.hop == 1 else 'Indirect'} link to a risky address",
                 detail=f"Linked {where} to {link.address}: {link.reason}. "
                 f"It {link.relation}. Path: {' -> '.join(link.path)}.",
-                source="Etherscan + " + ("GoPlus" if kind == "flagged" else "local list"),
+                source="Etherscan + " + _KIND_SOURCE.get(kind, "local list"),
             )
             current = best.get(fid)
             if current is None or order[severity] > order[current.severity]:

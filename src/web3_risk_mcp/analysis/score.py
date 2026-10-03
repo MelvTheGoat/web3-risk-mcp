@@ -10,6 +10,7 @@ from pydantic import Field
 
 from web3_risk_mcp import labels
 from web3_risk_mcp.analysis.address import address_findings
+from web3_risk_mcp.analysis.arc import BLOCKLIST_SOURCE, blocklist_findings, blocklisted_by
 from web3_risk_mcp.analysis.common import Collector
 from web3_risk_mcp.analysis.contract import inspect_contract
 from web3_risk_mcp.analysis.token import check_token_risk
@@ -18,7 +19,7 @@ from web3_risk_mcp.analysis.wallet import get_wallet_profile
 from web3_risk_mcp.chains import Chain
 from web3_risk_mcp.clients.rpc import is_contract_code
 from web3_risk_mcp.models import Finding, Report, SourceStatus
-from web3_risk_mcp.scoring import ScoreResult, score_findings
+from web3_risk_mcp.scoring import RULES_VERSION, ScoreResult, score_findings
 
 AddressType = Literal["wallet", "token", "contract", "unknown"]
 
@@ -29,23 +30,37 @@ class RiskScore(ScoreResult):
     address_type: AddressType
     checks_run: list[str]
     data_gaps: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
     sources: list[SourceStatus] = Field(default_factory=list)
+    rules_version: int = Field(
+        default=RULES_VERSION, description="Version of the rule table that made this score."
+    )
     method: str = Field(
         default="Read the resource risk://scoring-method for the full rule table.",
     )
 
 
 class _AddressLabels(Report):
-    """A tiny report for contracts: only the known-bad-address labels."""
+    """A tiny report for contracts: the known-bad-address labels and, on Arc,
+    the USDC and EURC blocklists."""
 
 
 async def _address_labels(services, chain: Chain, address: str) -> _AddressLabels:
     c = Collector()
-    security = await c.run("GoPlus", services.goplus.address_security(chain, address))
+    calls = [c.run("GoPlus", services.goplus.address_security(chain, address))]
+    if chain.blocklist_tokens:
+        calls.append(c.run(BLOCKLIST_SOURCE, blocklisted_by(services, chain, address)))
+    security, *blocked = await asyncio.gather(*calls)
     report = _AddressLabels(chain=chain.key, address=address)
     report.findings = address_findings(address, security, labels.lookup(chain.key, address))
+    report.findings += blocklist_findings(chain, (blocked[0] if blocked else None) or [])
     if c.failed("GoPlus"):
         report.data_gaps.append(f"Address labels from GoPlus are missing: {c.error('GoPlus')}")
+    if c.failed(BLOCKLIST_SOURCE):
+        names = " and ".join(symbol for symbol, _ in chain.blocklist_tokens)
+        report.data_gaps.append(
+            f"The {names} blocklists could not be read. Reason: {c.error(BLOCKLIST_SOURCE)}"
+        )
     report.sources = c.statuses
     return report
 
@@ -96,6 +111,7 @@ async def score_risk(
     findings: list[Finding] = [f for r in reports.values() for f in r.findings]
     sources = _merge_sources([*c.statuses, *(s for r in reports.values() for s in r.sources)])
     gaps = list(dict.fromkeys(g for r in reports.values() for g in r.data_gaps))
+    notes = list(dict.fromkeys(n for r in reports.values() for n in r.notes))
     if code is None:
         gaps.insert(0, f"Could not tell if this is a wallet or a contract: {c.error('RPC')}")
 
@@ -107,6 +123,7 @@ async def score_risk(
         address_type=address_type,
         checks_run=list(reports),
         data_gaps=gaps,
+        notes=notes,
         sources=sources,
     )
 

@@ -123,6 +123,36 @@ class EtherscanClient:
             },
         )
 
+    async def native_transfers(
+        self, chain: Chain, address: str, *, sort: str = "desc", limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """Every native coin move in or out of the address, on chains that log them.
+
+        On Arc, each USDC move (a plain send, an ERC-20 transfer, a payout from a
+        contract, a bridge mint or a burn) is logged as a Transfer event by a
+        system address (EIP-7708). Etherscan lists those logs like token
+        transfers of that address. Values have 18 decimals, the native USDC unit,
+        even though Etherscan shows the token's decimals as 0.
+
+        Returns an empty list on chains without such logs.
+        """
+        if not chain.native_transfer_emitter:
+            return []
+        return await self._call(
+            chain,
+            {
+                "module": "account",
+                "action": "tokentx",
+                "contractaddress": chain.native_transfer_emitter,
+                "address": address,
+                "startblock": 0,
+                "endblock": 9999999999,
+                "page": 1,
+                "offset": limit,
+                "sort": sort,
+            },
+        )
+
     async def source_code(self, chain: Chain, address: str) -> dict[str, Any]:
         """Verified source code and ABI for a contract.
 

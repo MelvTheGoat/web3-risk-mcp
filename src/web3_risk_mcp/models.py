@@ -42,6 +42,10 @@ class Report(BaseModel):
         default_factory=list,
         description="What we could not check. Missing data is not proof of safety.",
     )
+    notes: list[str] = Field(
+        default_factory=list,
+        description="How the data was read, for example rules that only apply on one chain.",
+    )
 
 
 # --- Wallet ------------------------------------------------------------------
@@ -100,6 +104,10 @@ class WalletProfile(Report):
     known_label: KnownLabel | None = None
     security_flags: list[str] = Field(
         default_factory=list, description="Bad-behaviour labels reported by GoPlus."
+    )
+    blocklisted_by: list[str] = Field(
+        default_factory=list,
+        description="Stablecoins (such as USDC on Arc) whose contract blocks this address.",
     )
     activity: ActivityPattern | None = None
     top_counterparties: list[Counterparty] = Field(default_factory=list)
@@ -245,7 +253,9 @@ class FlowEdge(BaseModel):
     from_address: str
     to_address: str
     transfers: int = Field(description="Number of transfers that carried value.")
-    native_value: float = Field(description="Native coin moved, in whole coins.")
+    native_value: float = Field(
+        description="Native coin moved, in whole coins. On Arc this is USDC."
+    )
     token_transfers: int = 0
     hop: int
 
@@ -256,6 +266,9 @@ class TraceNode(BaseModel):
     label: str | None = None
     label_category: str | None = None
     security_flags: list[str] = Field(default_factory=list)
+    blocklisted_by: list[str] = Field(
+        default_factory=list, description="Stablecoins whose contract blocks this address."
+    )
     expanded: bool = False
     note: str | None = None
 

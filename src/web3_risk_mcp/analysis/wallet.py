@@ -9,6 +9,14 @@ from typing import Any
 
 from web3_risk_mcp import labels
 from web3_risk_mcp.analysis.address import address_findings, goplus_flags
+from web3_risk_mcp.analysis.arc import (
+    BLOCKLIST_SOURCE,
+    arc_history_note,
+    blocklist_findings,
+    blocklisted_by,
+    other_tokens,
+    without_value,
+)
 from web3_risk_mcp.analysis.common import (
     Collector,
     days_between,
@@ -38,25 +46,42 @@ async def get_wallet_profile(
     now = now or datetime.now(UTC)
     c = Collector()
     es, rpc = services.etherscan, services.rpc
+    logs_native_moves = chain.native_transfer_emitter is not None
 
-    (
-        balance,
-        nonce,
-        code,
-        recent,
-        oldest,
-        internal,
-        token_txs,
-        security,
-    ) = await asyncio.gather(
-        c.run("RPC", rpc.balance(chain, address)),
-        c.run("RPC", rpc.nonce(chain, address)),
-        c.run("RPC", rpc.code(chain, address)),
-        c.run("Etherscan", es.transactions(chain, address, sort="desc", limit=RECENT_LIMIT)),
-        c.run("Etherscan", es.transactions(chain, address, sort="asc", limit=OLDEST_LIMIT)),
-        c.run("Etherscan", es.internal_transactions(chain, address, limit=RECENT_LIMIT)),
-        c.run("Etherscan", es.token_transfers(chain, address, limit=RECENT_LIMIT)),
-        c.run("GoPlus", services.goplus.address_security(chain, address)),
+    calls = {
+        "balance": c.run("RPC", rpc.balance(chain, address)),
+        "nonce": c.run("RPC", rpc.nonce(chain, address)),
+        "code": c.run("RPC", rpc.code(chain, address)),
+        "recent": c.run(
+            "Etherscan", es.transactions(chain, address, sort="desc", limit=RECENT_LIMIT)
+        ),
+        "oldest": c.run(
+            "Etherscan", es.transactions(chain, address, sort="asc", limit=OLDEST_LIMIT)
+        ),
+        "token_txs": c.run("Etherscan", es.token_transfers(chain, address, limit=RECENT_LIMIT)),
+        "security": c.run("GoPlus", services.goplus.address_security(chain, address)),
+    }
+    if logs_native_moves:
+        # Arc: the system Transfer stream already includes payouts from contracts,
+        # so "internal" transactions are not needed.
+        calls["native_recent"] = c.run(
+            "Etherscan", es.native_transfers(chain, address, sort="desc", limit=RECENT_LIMIT)
+        )
+        calls["native_oldest"] = c.run(
+            "Etherscan", es.native_transfers(chain, address, sort="asc", limit=OLDEST_LIMIT)
+        )
+    else:
+        calls["internal"] = c.run(
+            "Etherscan", es.internal_transactions(chain, address, limit=RECENT_LIMIT)
+        )
+    if chain.blocklist_tokens:
+        calls["blocked"] = c.run(BLOCKLIST_SOURCE, blocklisted_by(services, chain, address))
+    data: dict[str, Any] = dict(zip(calls, await asyncio.gather(*calls.values()), strict=True))
+    balance, nonce, code, security = (
+        data["balance"],
+        data["nonce"],
+        data["code"],
+        data["security"],
     )
 
     known = labels.lookup(chain.key, address)
@@ -70,8 +95,10 @@ async def get_wallet_profile(
         delegated_to=delegation_target(code),
         known_label=known,
         security_flags=goplus_flags(security),
+        blocklisted_by=data.get("blocked") or [],
     )
     profile.findings.extend(address_findings(address, security, known))
+    profile.findings.extend(blocklist_findings(chain, profile.blocklisted_by))
     if profile.delegated_to:
         profile.findings.append(
             Finding(
@@ -87,14 +114,31 @@ async def get_wallet_profile(
 
     history_ok = not c.failed("Etherscan")
     if history_ok:
-        recent_txs = list(recent or [])
-        oldest_txs = list(oldest or [])
-        profile.activity = _activity(address, recent_txs, oldest_txs, now)
-        profile.top_counterparties = _counterparties(
-            chain, address, recent_txs, list(internal or [])
-        )
-        profile.recent_tokens = _tokens(address, list(token_txs or []))
-        funder = _first_funder(address, oldest_txs)
+        recent_txs = list(data["recent"] or [])
+        oldest_txs = list(data["oldest"] or [])
+        token_txs = list(data["token_txs"] or [])
+        if logs_native_moves:
+            native_recent = list(data["native_recent"] or [])
+            native_oldest = list(data["native_oldest"] or [])
+            profile.activity = _activity(
+                address, recent_txs, oldest_txs, now, native_recent, native_oldest
+            )
+            profile.top_counterparties = _counterparties(
+                chain, address, without_value(recent_txs), native_recent
+            )
+            profile.recent_tokens = [
+                *_native_token_activity(chain, address, native_recent),
+                *_tokens(address, other_tokens(chain, token_txs)),
+            ][:TOP_TOKENS]
+            funder = _first_funder(address, native_oldest)
+            profile.notes.append(arc_history_note(chain))
+        else:
+            profile.activity = _activity(address, recent_txs, oldest_txs, now)
+            profile.top_counterparties = _counterparties(
+                chain, address, recent_txs, list(data["internal"] or [])
+            )
+            profile.recent_tokens = _tokens(address, token_txs)
+            funder = _first_funder(address, oldest_txs)
         if funder:
             profile.first_funded_by = funder
             funder_label = labels.lookup(chain.key, funder)
@@ -112,6 +156,11 @@ async def get_wallet_profile(
         )
     if c.failed("RPC"):
         profile.data_gaps.append(f"Balance and contract check failed. Reason: {c.error('RPC')}")
+    if c.failed(BLOCKLIST_SOURCE):
+        names = " and ".join(symbol for symbol, _ in chain.blocklist_tokens)
+        profile.data_gaps.append(
+            f"The {names} blocklists could not be read. Reason: {c.error(BLOCKLIST_SOURCE)}"
+        )
     if profile.is_contract:
         profile.data_gaps.append(
             "This address is a smart contract, not a personal wallet. "
@@ -123,10 +172,23 @@ async def get_wallet_profile(
 
 
 def _activity(
-    address: str, recent: list[dict[str, Any]], oldest: list[dict[str, Any]], now: datetime
+    address: str,
+    recent: list[dict[str, Any]],
+    oldest: list[dict[str, Any]],
+    now: datetime,
+    native_recent: list[dict[str, Any]] = (),
+    native_oldest: list[dict[str, Any]] = (),
 ) -> ActivityPattern:
-    first_seen = from_unix(oldest[0].get("timeStamp")) if oldest else None
-    last_seen = from_unix(recent[0].get("timeStamp")) if recent else None
+    """Age and habits of a wallet, from its normal transactions.
+
+    On Arc, a wallet can receive USDC without ever being the target of a
+    transaction (for example an ERC-20 transfer or a bridge mint), so the
+    first and last dates also look at the USDC Transfer stream.
+    """
+    firsts = [from_unix(rows[0].get("timeStamp")) for rows in (oldest, native_oldest) if rows]
+    lasts = [from_unix(rows[0].get("timeStamp")) for rows in (recent, native_recent) if rows]
+    first_seen = min((t for t in firsts if t), default=None)
+    last_seen = max((t for t in lasts if t), default=None)
     pattern = ActivityPattern(
         first_seen=first_seen,
         last_seen=last_seen,
@@ -225,6 +287,23 @@ def _tokens(address: str, transfers: list[dict[str, Any]]) -> list[TokenActivity
     return [
         TokenActivity(token=t, symbol=e["symbol"], transfers_in=e["in"], transfers_out=e["out"])
         for t, e in ranked[:TOP_TOKENS]
+    ]
+
+
+def _native_token_activity(
+    chain: Chain, address: str, native: list[dict[str, Any]]
+) -> list[TokenActivity]:
+    """One row for USDC on Arc, counted from the system Transfer stream."""
+    if not native or not chain.native_erc20:
+        return []
+    incoming = sum(1 for tx in native if (tx.get("to") or "").lower() == address)
+    return [
+        TokenActivity(
+            token=chain.native_erc20,
+            symbol=chain.native_symbol,
+            transfers_in=incoming,
+            transfers_out=len(native) - incoming,
+        )
     ]
 
 

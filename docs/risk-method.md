@@ -1,5 +1,8 @@
 # How the risk score works
 
+Rule table version: **2**. The version goes up by one whenever a rule,
+cap, or floor changes, so a saved score always says which rules made it.
+
 The score runs from 0 (no red flags found) to 100 (almost certainly dangerous).
 It is rule-based. There is no machine learning and no hidden weighting.
 Every point in a score comes from one finding, and each finding has a plain
@@ -63,6 +66,8 @@ does not mean "safe".**
 | `address.malicious_contracts_created` | +50 |  |  |
 | `address.honeypot_related_address` | +40 |  |  |
 | `address.honeypot_related_token` | +0 |  |  |
+| `address.usdc_blocklisted` | +80 | sanctioned | yes |
+| `address.eurc_blocklisted` | +80 | sanctioned | yes |
 | `address.fake_token` | +40 |  |  |
 | `address.known_mixer` | +40 | mixer |  |
 | `address.mixer` | +30 | mixer |  |
@@ -131,16 +136,39 @@ does not mean "safe".**
 | `trace.direct.scam` | +40 | direct_link |  |
 | `trace.direct.mixer` | +30 | direct_link |  |
 | `trace.direct.flagged` | +30 | direct_link |  |
+| `trace.direct.blocklisted` | +50 | direct_link |  |
 | `trace.indirect.sanctioned` | +15 | indirect_link |  |
 | `trace.indirect.exploit` | +10 | indirect_link |  |
 | `trace.indirect.scam` | +10 | indirect_link |  |
 | `trace.indirect.mixer` | +8 | indirect_link |  |
 | `trace.indirect.flagged` | +8 | indirect_link |  |
+| `trace.indirect.blocklisted` | +12 | indirect_link |  |
 
 Findings without their own rule get points from their severity:
 critical = 40, high = 15, medium = 8, low = 2, info = 0. Risky functions found in a contract (`contract.fn.*`) use these
 severity points too. Their severity is lowered when the owner has renounced
 control, because nobody can call owner-only functions any more.
+
+## Extra checks on Arc
+
+Arc is Circle's chain, and its native coin is USDC. Three things are
+different there, and the tools handle each one:
+
+- **Blocklists.** The USDC and EURC contracts on Arc keep a public
+  blocklist. Every address checked is looked up in both
+  (`address.usdc_blocklisted`, `address.eurc_blocklisted`). A blocked
+  address cannot send or receive that coin, and a transfer to it fails
+  and still costs the fee. These findings share the sanctions group, so a
+  sanctioned and blocked address is not counted twice. Fund tracing also
+  checks the addresses it finds (`trace.direct.blocklisted`,
+  `trace.indirect.blocklisted`).
+- **One USDC stream.** Every USDC move is logged once by a system address
+  (EIP-7708) with 18 decimals. ERC-20 transfers are also logged a second
+  time by the USDC contract with 6 decimals. The tools read only the
+  system stream, so no move is missed or counted twice.
+- **Two views of one balance.** The native balance (18 decimals) and the
+  ERC-20 balance (6 decimals) are the same money. The tools always use the
+  native value and never add the two.
 
 ## Limits of this method
 

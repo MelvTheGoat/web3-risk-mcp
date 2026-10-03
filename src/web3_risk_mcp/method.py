@@ -12,11 +12,15 @@ from web3_risk_mcp.scoring import (
     OWNER_POWER_CAP,
     OWNER_POWER_GROUPS,
     RULES,
+    RULES_VERSION,
     SEVERITY_POINTS,
 )
 
 _INTRO = """\
 # How the risk score works
+
+Rule table version: **{version}**. The version goes up by one whenever a rule,
+cap, or floor changes, so a saved score always says which rules made it.
 
 The score runs from 0 (no red flags found) to 100 (almost certainly dangerous).
 It is rule-based. There is no machine learning and no hidden weighting.
@@ -71,6 +75,27 @@ Findings without their own rule get points from their severity:
 severity points too. Their severity is lowered when the owner has renounced
 control, because nobody can call owner-only functions any more.
 
+## Extra checks on Arc
+
+Arc is Circle's chain, and its native coin is USDC. Three things are
+different there, and the tools handle each one:
+
+- **Blocklists.** The USDC and EURC contracts on Arc keep a public
+  blocklist. Every address checked is looked up in both
+  (`address.usdc_blocklisted`, `address.eurc_blocklisted`). A blocked
+  address cannot send or receive that coin, and a transfer to it fails
+  and still costs the fee. These findings share the sanctions group, so a
+  sanctioned and blocked address is not counted twice. Fund tracing also
+  checks the addresses it finds (`trace.direct.blocklisted`,
+  `trace.indirect.blocklisted`).
+- **One USDC stream.** Every USDC move is logged once by a system address
+  (EIP-7708) with 18 decimals. ERC-20 transfers are also logged a second
+  time by the USDC contract with 6 decimals. The tools read only the
+  system stream, so no move is missed or counted twice.
+- **Two views of one balance.** The native balance (18 decimals) and the
+  ERC-20 balance (6 decimals) are the same money. The tools always use the
+  native value and never add the two.
+
 ## Limits of this method
 
 - Points were chosen by hand from common scam patterns. They are a
@@ -96,6 +121,7 @@ def scoring_method_markdown() -> str:
     )
     severity = ", ".join(f"{sev} = {pts}" for sev, pts in SEVERITY_POINTS.items())
     return _INTRO.format(
+        version=RULES_VERSION,
         floor=DECISIVE_FLOOR,
         levels=levels,
         rules=rules,

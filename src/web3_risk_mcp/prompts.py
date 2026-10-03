@@ -33,7 +33,12 @@ Follow these steps. Use the tools; do not guess facts you have not checked.
      addresses, and exploiters in the paths.
 
 3. Check the gaps. Read `sources` and `data_gaps` in every result. If a source
-   failed, say so clearly. Missing data is not evidence of safety.
+   failed, say so clearly. Missing data is not evidence of safety. Read `notes`
+   too: on Arc they explain how USDC amounts were read.
+
+   On Arc, USDC is the native coin. If `blocklisted_by` lists USDC or EURC,
+   Circle's contract blocks the address: any transfer of that coin to or from
+   it will fail and still cost the fee.
 
 4. Write the answer for someone new to crypto:
    - Start with one sentence: the verdict and the score (for example
