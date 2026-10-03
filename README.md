@@ -15,7 +15,8 @@ with it. It then gives a 0 to 100 risk score with a clear reason for every point
 > assistants to outside tools and data. Write a tool once, and every MCP
 > client can use it.
 
-**New: [Arc Safe Send](#arc-and-arc-safe-send).** A web page and MCP tool
+**New: [Arc Safe Send](#arc-and-arc-safe-send)**, live at
+https://arc-safe-send.onrender.com. A web page and MCP tool
 that checks an address on Arc, Circle's chain, before you send USDC. It reads
 Circle's USDC and EURC blocklists, simulates the payment, counts each USDC
 move once, and lets you pay from your own wallet.
@@ -143,9 +144,8 @@ A few design choices worth knowing:
 > Arc is built for payments and agents. Safe Send is the check that runs
 > before money moves.
 
-**Live demo:** not deployed yet. Deploy it on Render's free plan with the
-steps in [Deploy the web app on Render](#deploy-the-web-app-on-render), then
-put the link here.
+**Live demo: https://arc-safe-send.onrender.com** (free plan: the first
+visit after a quiet spell can take up to a minute while it wakes up).
 
 ![Arc Safe Send checking a wallet that Circle's USDC contract blocks](docs/images/arc-safe-send-blocked.png)
 
@@ -299,7 +299,8 @@ Answers from the cache do not count. All of these are settings in
 | Payment and Save to Arc, end to end | The page's wallet calls sent to a local Arc chain (`arc-anvil --network arc`, chain ID 5042) running the contract | 2.5 USDC arrived, and the saved record matched the page |
 | Contract | 8 Arc Foundry tests (with fuzzing) under standard rules, Arc rules, and on an Arc mainnet fork | Pass |
 | Web image | Built and run locally, with a live Arc check | Pass |
-| Not tested from here | A payment with a real wallet on Arc mainnet, the Render deployment, and the contract on mainnet. These need your own wallet and accounts. | Not run |
+| Live deployment | https://arc-safe-send.onrender.com: health check, settings, and live Arc checks of the three examples (100, 0, and 38, every data source answered) | Pass |
+| Not tested from here | A payment with a real wallet on Arc mainnet, and the contract on mainnet. These need your own wallet. | Not run |
 
 ### Limits on Arc
 

@@ -10,6 +10,7 @@
   const TYPE_NAMES = { wallet: "Wallet", token: "Token contract", contract: "Smart contract", unknown: "Unknown" };
 
   let config = null;   // from /api/config
+  let configReady = null;  // resolves once /api/config has loaded
   let current = null;  // the last check response
   let slowTimer = null;
 
@@ -92,6 +93,14 @@
       $("address").focus();
       return;
     }
+    // A check can start before the settings have loaded (for example a quick
+    // click on an example while the free server wakes up), so wait for them.
+    try {
+      await configReady;
+    } catch (err) {
+      setStatus(status, "Could not load settings from the server. Reload the page to try again.", "error");
+      return;
+    }
     $("result").hidden = true;
     current = null;
     $("check-button").disabled = true;
@@ -100,11 +109,17 @@
     slowTimer = setTimeout(() => setStatus(status, "Still checking. The first check after a quiet period can take up to a minute while the free server wakes up."), 20000);
 
     try {
-      const response = await fetch("/api/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address, chain }),
-      });
+      let response;
+      try {
+        response = await fetch("/api/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address, chain }),
+        });
+      } catch (err) {
+        setStatus(status, "Could not reach the server. Check your connection and try again.", "error");
+        return;
+      }
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         const wait = data.retry_after ? ` Try again in ${data.retry_after} seconds.` : "";
@@ -119,7 +134,8 @@
       url.searchParams.set("chain", data.result.chain);
       window.history.replaceState(null, "", url);
     } catch (err) {
-      setStatus(status, "Could not reach the server. Check your connection and try again.", "error");
+      console.error(err);
+      setStatus(status, "Something went wrong while showing the result. Reload the page and try again.", "error");
     } finally {
       clearTimeout(slowTimer);
       $("check-button").disabled = false;
@@ -386,6 +402,7 @@
   // ---- Wire up --------------------------------------------------------------
 
   document.addEventListener("DOMContentLoaded", async () => {
+    configReady = loadConfig();
     $("check-form").addEventListener("submit", (event) => {
       event.preventDefault();
       runCheck();
@@ -407,7 +424,7 @@
     $("send-button").addEventListener("click", sendPayment);
     $("attest-button").addEventListener("click", saveAttestation);
     try {
-      await loadConfig();
+      await configReady;
     } catch (err) {
       setStatus($("status"), "Could not load settings from the server. Reload the page to try again.", "error");
       return;

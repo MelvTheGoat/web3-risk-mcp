@@ -1,7 +1,7 @@
 # Arc Microgrants submission pack: Arc Safe Send
 
-Everything needed for the DoraHacks submission. Fill in the two links marked
-**TODO** once the web app and the contract are live on Arc mainnet.
+Everything needed for the DoraHacks submission. Fill in the contract link
+marked **TODO** once RiskAttestation is deployed on Arc mainnet.
 
 ---
 
@@ -41,7 +41,7 @@ hosted MCP endpoint for agents, and an API that wallets and payment apps call
 before every send.
 
 **Links:**
-- Live app: **TODO** (your Render link)
+- Live app: https://arc-safe-send.onrender.com
 - RiskAttestation on Arc mainnet: **TODO** (`https://explorer.arc.io/address/<ADDRESS>`)
 - Code: https://github.com/MelvTheGoat/web3-risk-mcp
 - Builder profile: https://github.com/MelvTheGoat
@@ -76,8 +76,8 @@ Tips:
 
 | The rules ask for | Status | What to do |
 |---|---|---|
-| Deployed and working on Arc mainnet at the time you submit | Not yet | Deploy the RiskAttestation contract (contracts/README.md) and the web app (README, "Deploy the web app on Render"). Make one real payment and one saved check on mainnet. |
-| A live deployment with a link reviewers can open | Not yet | Use the Render link. Check that it loads, that `/healthz` answers, and that the three example buttons work. |
+| Deployed and working on Arc mainnet at the time you submit | Half done | The web app is live and reads Arc mainnet. Still to do: deploy the RiskAttestation contract (contracts/README.md), set `ATTESTATION_CONTRACT` in Render, and make one real payment and one saved check on mainnet. |
+| A live deployment with a link reviewers can open | Done | https://arc-safe-send.onrender.com (checked: `/healthz` answers and the three examples give live Arc results). |
 | A public repo | Done | https://github.com/MelvTheGoat/web3-risk-mcp (everything is on `main`). |
 | A short description of what it does and what it uses Arc for | Done | Section 1 above. |
 | A public builder profile (GitHub, X, or Farcaster) | Done | https://github.com/MelvTheGoat |
