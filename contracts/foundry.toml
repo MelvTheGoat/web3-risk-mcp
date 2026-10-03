@@ -1,0 +1,21 @@
+# Arc Foundry project for the RiskAttestation contract.
+# Install Arc Foundry: https://docs.arc.io/arc/tutorials/install-arc-foundry
+#
+#   arc-forge test                       # standard EVM rules
+#   FOUNDRY_PROFILE=arc arc-forge test   # Arc rules (USDC as gas, blocklist, and so on)
+
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.30"
+optimizer = true
+optimizer_runs = 200
+
+[profile.arc]
+network = "arc"
+
+[rpc_endpoints]
+arc = "https://rpc.mainnet.arc.io"

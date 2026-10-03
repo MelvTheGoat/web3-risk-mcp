@@ -12,6 +12,11 @@ build/
 .coverage
 htmlcov/
 
+# Foundry build output and local deploy records
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
 # Secrets: never commit real keys
 .env
 .env.*

@@ -74,3 +74,34 @@ jobs:
           done
           docker logs safe-send
           exit 1
+
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Arc Foundry (checksum pinned)
+        run: |
+          v=v0.8.0-2
+          f=arc-foundry-$v-x86_64-unknown-linux-gnu.tar.gz
+          curl -sSLO "https://github.com/circlefin/arc-foundry/releases/download/$v/$f"
+          echo "088bdb96a84418b757f9825d491e702792f1d1d1e29a9145af305a6600a79556  $f" | sha256sum -c
+          tar -xzf "$f"
+          mkdir -p "$HOME/.local/bin"
+          mv forge "$HOME/.local/bin/arc-forge"
+          mv cast "$HOME/.local/bin/arc-cast"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check formatting
+        working-directory: contracts
+        run: arc-forge fmt --check
+
+      - name: Test with standard EVM rules
+        working-directory: contracts
+        run: arc-forge test
+
+      - name: Test with Arc rules
+        working-directory: contracts
+        run: FOUNDRY_PROFILE=arc arc-forge test
