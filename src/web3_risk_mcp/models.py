@@ -57,6 +57,9 @@ class KnownLabel(BaseModel):
     name: str
     category: Literal["mixer", "sanctioned", "exploit", "scam", "burn", "exchange", "protocol"]
     note: str | None = None
+    official: bool = Field(
+        default=False, description="True if the chain's own documentation lists this contract."
+    )
 
 
 class Counterparty(BaseModel):

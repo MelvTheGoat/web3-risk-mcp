@@ -37,7 +37,7 @@ DECISIVE_FLOOR = 75
 # The version of the rule table below. Raise it by one whenever any rule,
 # cap, or floor changes, so a saved score always says which rules made it.
 # A test fails if the table changes without a new version.
-RULES_VERSION = 2
+RULES_VERSION = 3
 
 # Groups that describe owner control rather than fraud, and their shared cap.
 OWNER_POWER_GROUPS = frozenset(
@@ -90,6 +90,9 @@ RULES: dict[str, Rule] = {
     # addresses for reasons such as sanctions, so it shares the sanctions group.
     "address.usdc_blocklisted": Rule(80, "sanctioned", decisive=True),
     "address.eurc_blocklisted": Rule(80, "sanctioned", decisive=True),
+    # Listed in the chain's official contract list (for example Circle's
+    # contracts on Arc). A trust signal, like a token trust list.
+    "address.official_contract": Rule(-30),
     "address.fake_token": Rule(40),
     "address.known_mixer": Rule(40, "mixer"),
     "address.mixer": Rule(30, "mixer"),

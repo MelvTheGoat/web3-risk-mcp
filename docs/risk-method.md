@@ -1,6 +1,6 @@
 # How the risk score works
 
-Rule table version: **2**. The version goes up by one whenever a rule,
+Rule table version: **3**. The version goes up by one whenever a rule,
 cap, or floor changes, so a saved score always says which rules made it.
 
 The score runs from 0 (no red flags found) to 100 (almost certainly dangerous).
@@ -68,6 +68,7 @@ does not mean "safe".**
 | `address.honeypot_related_token` | +0 |  |  |
 | `address.usdc_blocklisted` | +80 | sanctioned | yes |
 | `address.eurc_blocklisted` | +80 | sanctioned | yes |
+| `address.official_contract` | -30 |  |  |
 | `address.fake_token` | +40 |  |  |
 | `address.known_mixer` | +40 | mixer |  |
 | `address.mixer` | +30 | mixer |  |

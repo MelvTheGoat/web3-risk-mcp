@@ -19,7 +19,12 @@ def _load() -> dict[tuple[str, str], KnownLabel]:
     )
     table: dict[tuple[str, str], KnownLabel] = {}
     for entry in raw["addresses"]:
-        label = KnownLabel(name=entry["name"], category=entry["category"], note=entry.get("note"))
+        label = KnownLabel(
+            name=entry["name"],
+            category=entry["category"],
+            note=entry.get("note"),
+            official=entry.get("official", False),
+        )
         for chain in entry["chains"]:
             table[(chain, entry["address"].lower())] = label
     return table

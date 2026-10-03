@@ -87,4 +87,15 @@ def address_findings(
                 source="Local list",
             )
         )
+    if known is not None and known.official:
+        findings.append(
+            Finding(
+                id="address.official_contract",
+                severity="info",
+                title=f"Official contract: {known.name}",
+                detail=f"The chain's own documentation lists {subject.lower()} as {known.name}. "
+                "This tells you who runs it. It does not remove the control risks listed here.",
+                source="Local list (official docs)",
+            )
+        )
     return findings

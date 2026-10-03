@@ -23,6 +23,8 @@ from tests.arc_fixtures import (
     USDC,
 )
 from tests.mocks import mock_etherscan, mock_goplus_address, mock_goplus_address_by, mock_rpc
+from web3_risk_mcp import labels
+from web3_risk_mcp.analysis.address import address_findings
 from web3_risk_mcp.analysis.arc import blocklisted_by, other_tokens, without_value
 from web3_risk_mcp.analysis.score import score_risk
 from web3_risk_mcp.analysis.trace import trace_funds
@@ -138,7 +140,7 @@ async def test_ordinary_arc_wallet_scores_low(replay):
     assert result.confidence == "high"
 
 
-@pytest.mark.parametrize(("token", "score"), [(USDC, 5), (EURC, 45)])
+@pytest.mark.parametrize(("token", "score"), [(USDC, 0), (EURC, 15)])
 async def test_token_is_not_flagged_by_its_own_blocklist(replay, token, score):
     # Circle's contracts block their own address so nobody sends tokens to the
     # contract by mistake. That must not look like a sanctions hit.
@@ -357,4 +359,15 @@ def test_rules_version_changes_with_the_rule_table():
         "function_groups": FUNCTION_GROUPS,
     }
     fingerprint = hashlib.sha256(json.dumps(table, sort_keys=True).encode()).hexdigest()[:16]
-    assert {RULES_VERSION: fingerprint} == {2: "262b121eceec1f27"}
+    assert {RULES_VERSION: fingerprint} == {3: "6e3c69407a928f0e"}
+
+
+def test_official_arc_contract_gets_a_trust_signal():
+    cctp = labels.lookup("arc", "0x28b5a0e9c621a5badaa536219b3a228c8168cf5d")
+    assert cctp.official is True
+    findings = address_findings("0x28b5a0e9c621a5badaa536219b3a228c8168cf5d", None, cctp)
+    assert [f.id for f in findings] == ["address.official_contract"]
+    assert "Circle CCTP: TokenMessengerV2" in findings[0].title
+    assert RULES["address.official_contract"].points < 0
+    # Labels from other sources (like an exchange wallet) are not "official".
+    assert labels.lookup("ethereum", "0x28c6c06298d514db089934071355e5743bf21d60").official is False
