@@ -19,6 +19,12 @@ def test_settings_read_from_environment(monkeypatch):
     assert settings.rpc_override("ethereum") is None
 
 
+def test_arc_rpc_can_be_overridden(monkeypatch):
+    monkeypatch.setenv("RPC_URL_ARC", "https://rpc.drpc.mainnet.arc.io")
+    settings = Settings(_env_file=None)
+    assert settings.rpc_override("arc") == "https://rpc.drpc.mainnet.arc.io"
+
+
 def test_secret_is_hidden_when_printed():
     settings = Settings(_env_file=None, etherscan_api_key=SecretStr("topsecret"))
     assert "topsecret" not in repr(settings)

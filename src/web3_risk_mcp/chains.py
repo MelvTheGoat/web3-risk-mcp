@@ -2,12 +2,30 @@
 
 All of them are EVM chains. EVM means "Ethereum Virtual Machine": the same
 kind of smart contracts and addresses work on all of them.
+
+Arc is Circle's own chain. It works like Ethereum, with a few differences
+that matter for a risk check:
+
+- Its native coin, used to pay fees, is USDC. The native balance has 18
+  decimals. The same balance can also be used through an ERC-20 token
+  contract at 0x3600...0000, which shows it with 6 decimals. They are one
+  balance seen two ways, so we never add them up.
+- Every USDC move (plain sends, ERC-20 transfers, mints and burns) is
+  logged as a Transfer event by a "system emitter" address (EIP-7708). We
+  read that one stream, so each move is counted once and none is missed.
+- The USDC and EURC contracts keep a blocklist that anyone can read. A
+  transfer to or from a blocked address fails, and still costs the fee.
 """
 
 import re
 from dataclasses import dataclass
 
 from web3_risk_mcp.errors import InvalidInputError
+
+# Arc mainnet addresses, from https://docs.arc.io/arc/references/contract-addresses
+ARC_USDC = "0x3600000000000000000000000000000000000000"
+ARC_EURC = "0xbef5f6d51cb62b58e6a8f77868681825c6fe21c1"
+ARC_SYSTEM_EMITTER = "0xfffffffffffffffffffffffffffffffffffffffe"
 
 
 @dataclass(frozen=True)
@@ -23,6 +41,13 @@ class Chain:
     explorer_url: str
     # Etherscan's free plan does not include account history on every chain.
     etherscan_free_history: bool
+    # Arc only: the address that logs every native coin move as a Transfer
+    # event (EIP-7708). None on chains where plain sends leave no log.
+    native_transfer_emitter: str | None = None
+    # Arc only: the ERC-20 contract that shows the native coin balance.
+    native_erc20: str | None = None
+    # Stablecoin contracts with a public blocklist we can read: (symbol, address).
+    blocklist_tokens: tuple[tuple[str, str], ...] = ()
 
 
 CHAINS: dict[str, Chain] = {
@@ -76,6 +101,19 @@ CHAINS: dict[str, Chain] = {
         explorer_url="https://bscscan.com",
         etherscan_free_history=False,
     ),
+    "arc": Chain(
+        key="arc",
+        name="Arc",
+        chain_id=5042,
+        native_symbol="USDC",
+        dexscreener_id="arc",
+        default_rpc_url="https://rpc.mainnet.arc.io",
+        explorer_url="https://explorer.arc.io",
+        etherscan_free_history=True,
+        native_transfer_emitter=ARC_SYSTEM_EMITTER,
+        native_erc20=ARC_USDC,
+        blocklist_tokens=(("USDC", ARC_USDC), ("EURC", ARC_EURC)),
+    ),
 }
 
 # Other names people use for the same chains.
@@ -97,6 +135,9 @@ _ALIASES: dict[str, str] = {
     "binance": "bsc",
     "binance smart chain": "bsc",
     "56": "bsc",
+    "arc mainnet": "arc",
+    "arc-mainnet": "arc",
+    "5042": "arc",
 }
 
 _ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")

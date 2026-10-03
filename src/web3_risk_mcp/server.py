@@ -49,7 +49,7 @@ READ_ONLY = ToolAnnotations(read_only_hint=True, destructive_hint=False, open_wo
 AddressArg = Annotated[str, Field(description="An EVM address: 0x followed by 40 hex characters.")]
 ChainArg = Annotated[
     str,
-    Field(description="Chain name or ID: ethereum, base, arbitrum, polygon, or bsc."),
+    Field(description="Chain name or ID: ethereum, base, arbitrum, polygon, bsc, or arc."),
 ]
 
 
@@ -65,6 +65,12 @@ class ChainInfo(BaseModel):
     native_symbol: str
     explorer_url: str
     full_history_on_free_etherscan_plan: bool
+    native_transfer_logs: bool = Field(
+        description="True if every native coin move is logged as a Transfer event (Arc)."
+    )
+    blocklist_checks: list[str] = Field(
+        description="Stablecoins whose blocklist is read for every address checked."
+    )
 
 
 class ChainList(BaseModel):
@@ -185,6 +191,8 @@ def create_server(services_factory: Callable[[], Services] | None = None) -> MCP
                     native_symbol=c.native_symbol,
                     explorer_url=c.explorer_url,
                     full_history_on_free_etherscan_plan=c.etherscan_free_history,
+                    native_transfer_logs=c.native_transfer_emitter is not None,
+                    blocklist_checks=[symbol for symbol, _ in c.blocklist_tokens],
                 )
                 for c in CHAINS.values()
             ]

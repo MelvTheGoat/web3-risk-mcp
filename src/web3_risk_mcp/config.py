@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     rpc_url_arbitrum: str | None = None
     rpc_url_polygon: str | None = None
     rpc_url_bsc: str | None = None
+    rpc_url_arc: str | None = None
 
     # Network behaviour.
     http_timeout_seconds: float = Field(default=15.0, gt=0)

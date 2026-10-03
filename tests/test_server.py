@@ -45,8 +45,14 @@ async def test_tools_are_listed_and_marked_read_only(connect):
 async def test_list_supported_chains(connect):
     async with connect() as client:
         result = await client.call_tool("list_supported_chains", {})
-        keys = [c["key"] for c in result.structured_content["chains"]]
-        assert keys == ["ethereum", "base", "arbitrum", "polygon", "bsc"]
+        chains = {c["key"]: c for c in result.structured_content["chains"]}
+        assert list(chains) == ["ethereum", "base", "arbitrum", "polygon", "bsc", "arc"]
+        arc = chains["arc"]
+        assert arc["chain_id"] == 5042
+        assert arc["native_symbol"] == "USDC"
+        assert arc["native_transfer_logs"] is True
+        assert arc["blocklist_checks"] == ["USDC", "EURC"]
+        assert chains["ethereum"]["native_transfer_logs"] is False
 
 
 async def test_bad_address_gives_clear_tool_error(connect):
