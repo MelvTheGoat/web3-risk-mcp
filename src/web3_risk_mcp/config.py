@@ -4,6 +4,8 @@ All settings come from environment variables or a `.env` file.
 See `.env.example` for the full list with explanations.
 """
 
+import logging
+import sys
 from functools import lru_cache
 
 from pydantic import Field, SecretStr
@@ -39,7 +41,8 @@ class Settings(BaseSettings):
 
     # Requests per second we allow ourselves to send to each source.
     # These stay under each provider's free-plan limits.
-    etherscan_requests_per_second: float = Field(default=3.0, gt=0)
+    # Etherscan's free plan allows 3 calls per second; we stay a little under it.
+    etherscan_requests_per_second: float = Field(default=2.5, gt=0)
     goplus_requests_per_second: float = Field(default=0.5, gt=0)
     dexscreener_requests_per_second: float = Field(default=4.0, gt=0)
     rpc_requests_per_second: float = Field(default=10.0, gt=0)
@@ -68,3 +71,20 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Load settings once and reuse them."""
     return Settings()
+
+
+def setup_logging(level: str) -> None:
+    """Send logs to stderr (with stdio, stdout is reserved for MCP messages).
+
+    The httpx library logs every request URL at INFO level, and some URLs
+    carry an API key (Etherscan takes it as a query parameter). Its logger is
+    kept at WARNING so keys never end up in logs. Our own HTTP code already
+    removes keys from the messages it writes.
+    """
+    logging.basicConfig(
+        level=level.upper(),
+        stream=sys.stderr,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    for name in ("httpx", "httpcore"):
+        logging.getLogger(name).setLevel(logging.WARNING)

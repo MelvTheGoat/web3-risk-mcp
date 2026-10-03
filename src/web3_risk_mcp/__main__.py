@@ -13,11 +13,9 @@ Run as a streamable HTTP server (for remote or shared use):
 from __future__ import annotations
 
 import argparse
-import logging
-import sys
 
 from web3_risk_mcp import __version__
-from web3_risk_mcp.config import get_settings
+from web3_risk_mcp.config import get_settings, setup_logging
 from web3_risk_mcp.server import create_server
 
 
@@ -33,12 +31,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--port", type=int, default=settings.http_port)
     args = parser.parse_args(argv)
 
-    # Logs go to stderr. With stdio, stdout is reserved for MCP messages.
-    logging.basicConfig(
-        level=settings.log_level.upper(),
-        stream=sys.stderr,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
+    setup_logging(settings.log_level)
 
     server = create_server()
     if args.transport == "http":
