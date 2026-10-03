@@ -253,7 +253,7 @@ async def _findings(
             "contract.unverified",
             "high",
             "Source code is not verified",
-            "The author has not published the source code, so nobody can easily check "
+            "The source code is not verified on Etherscan, so nobody can easily check "
             "what the contract does. Most honest projects verify their contracts.",
             "Etherscan",
         )
