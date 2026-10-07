@@ -30,3 +30,5 @@ contracts/broadcast/
 # Local assistant settings
 .claude/
 CLAUDE.md
+
+contracts/deploy.log

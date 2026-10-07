@@ -32,6 +32,19 @@ so you do it yourself, below.
 
 ## Deploy it to Arc mainnet (about 10 minutes)
 
+**Shortest path:** after steps 1 to 3 below, run one script. It checks the
+network is Arc mainnet, runs the tests, checks your balance, shows a dry run
+with the cost, asks you to type `yes`, deploys, checks the contract is live,
+and prints the Render setting to add. It was tested end to end on a local Arc
+chain (`arc-anvil --network arc --chain-id 5042`), including stopping on the
+wrong network and sending nothing when you do not type `yes`.
+
+```bash
+./contracts/deploy.sh            # uses the keystore named arc-deployer
+```
+
+The manual steps follow, if you prefer to run each command yourself.
+
 You need a wallet you control with a little USDC on Arc for gas. About
 0.05 USDC is plenty: the dry run estimated 0.015 USDC.
 
