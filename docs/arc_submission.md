@@ -1,7 +1,6 @@
 # Arc Microgrants submission pack: Arc Safe Send
 
-Everything needed for the DoraHacks submission. Fill in the contract link
-marked **TODO** once RiskAttestation is deployed on Arc mainnet.
+Everything needed for the DoraHacks submission.
 
 ---
 
@@ -42,7 +41,7 @@ before every send.
 
 **Links:**
 - Live app: https://arc-safe-send.onrender.com
-- RiskAttestation on Arc mainnet: **TODO** (`https://explorer.arc.io/address/<ADDRESS>`)
+- RiskAttestation on Arc mainnet: https://explorer.arc.io/address/0x5984e03F045AEE669444eA69b0f3869A02535054
 - Code: https://github.com/MelvTheGoat/web3-risk-mcp
 - Builder profile: https://github.com/MelvTheGoat
 
@@ -76,12 +75,12 @@ Tips:
 
 | The rules ask for | Status | What to do |
 |---|---|---|
-| Deployed and working on Arc mainnet at the time you submit | Half done | The web app is live and reads Arc mainnet. Still to do: deploy the RiskAttestation contract (contracts/README.md), set `ATTESTATION_CONTRACT` in Render, and make one real payment and one saved check on mainnet. |
+| Deployed and working on Arc mainnet at the time you submit | Mostly done | The web app is live and reads Arc mainnet. RiskAttestation is deployed at `0x5984e03F045AEE669444eA69b0f3869A02535054` (its code on chain matches this repo's build). Still to do: set `ATTESTATION_CONTRACT` in Render, and make one real payment and one saved check on mainnet. |
 | A live deployment with a link reviewers can open | Done | https://arc-safe-send.onrender.com (checked: `/healthz` answers and the three examples give live Arc results). |
 | A public repo | Done | https://github.com/MelvTheGoat/web3-risk-mcp (everything is on `main`). |
 | A short description of what it does and what it uses Arc for | Done | Section 1 above. |
 | A public builder profile (GitHub, X, or Farcaster) | Done | https://github.com/MelvTheGoat |
-| Not a mockup, slide deck, or testnet-only build | Done once deployed | Everything runs on Arc mainnet data; the contract and payments must be on mainnet. |
+| Not a mockup, slide deck, or testnet-only build | Done | Everything runs on Arc mainnet data, and the contract is on Arc mainnet. |
 | Has an Arc component | Done | Blocklist reads, payment test, EIP-7708 USDC flows, USDC payments, contract on Arc. |
 | Not already funded by a Circle or Arc program | Your call | Confirm this is true before you submit. |
 | The work is yours, or you have the right to submit it | Your call | The repo is MIT licensed and written for you. |

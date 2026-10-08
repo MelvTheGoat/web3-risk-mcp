@@ -26,9 +26,16 @@ can rebuild the text from a result and check the hash. See
 | Deploy script dry run against Arc mainnet (no key, nothing sent) | about 378,000 gas, estimated 0.015 USDC at 40 gwei |
 | Deploy and one `attest` call on a local Arc chain (`arc-anvil --network arc`) | worked; `attest` used 92,966 gas |
 | A plain USDC send to the contract on the local Arc chain | refused, as intended |
+| Deploy to Arc mainnet with `deploy.sh` | done, cost about 0.0058 USDC |
+| Code on Arc mainnet compared with `FOUNDRY_PROFILE=arc arc-forge build` | the same, byte for byte |
+| An `attest` call built by the web app, simulated against the mainnet contract (nothing sent) | succeeds |
 
-It has **not** been deployed to Arc mainnet yet. That step needs your wallet,
-so you do it yourself, below.
+## Live on Arc mainnet
+
+`RiskAttestation` is deployed at
+[`0x5984e03F045AEE669444eA69b0f3869A02535054`](https://explorer.arc.io/address/0x5984e03F045AEE669444eA69b0f3869A02535054).
+
+The steps below are for anyone who wants to deploy their own copy.
 
 ## Deploy it to Arc mainnet (about 10 minutes)
 

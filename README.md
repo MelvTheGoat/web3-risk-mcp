@@ -231,8 +231,9 @@ keeps a public record of checks: the address, score, rule table version, a
 hash of the findings, the time, and who saved it. It has no owner and holds
 no money. When `ATTESTATION_CONTRACT` is set, the page shows **Save to Arc**
 and your own wallet signs the call. The findings hash is keccak256 of a short
-fixed text that anyone can rebuild from the result. Deploy steps with Arc
-Foundry are in [contracts/README.md](contracts/README.md).
+fixed text that anyone can rebuild from the result. It is live on Arc
+mainnet at [`0x5984e03F045AEE669444eA69b0f3869A02535054`](https://explorer.arc.io/address/0x5984e03F045AEE669444eA69b0f3869A02535054).
+Deploy steps with Arc Foundry are in [contracts/README.md](contracts/README.md).
 
 ### For AI agents
 
@@ -300,7 +301,8 @@ Answers from the cache do not count. All of these are settings in
 | Contract | 8 Arc Foundry tests (with fuzzing) under standard rules, Arc rules, and on an Arc mainnet fork | Pass |
 | Web image | Built and run locally, with a live Arc check | Pass |
 | Live deployment | https://arc-safe-send.onrender.com: health check, settings, and live Arc checks of the three examples (100, 0, and 38, every data source answered) | Pass |
-| Not tested from here | A payment with a real wallet on Arc mainnet, and the contract on mainnet. These need your own wallet. | Not run |
+| Contract on Arc mainnet | Deployed at `0x5984e03F045AEE669444eA69b0f3869A02535054`. Its code on chain matches this repo's build, and an `attest` call built by the web app succeeds when simulated against it | Pass |
+| Not tested from here | A payment and a saved check with a real wallet on Arc mainnet. These need your own wallet. | Not run |
 
 ### Limits on Arc
 
