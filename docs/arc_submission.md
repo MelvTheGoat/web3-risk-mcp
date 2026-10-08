@@ -75,7 +75,7 @@ Tips:
 
 | The rules ask for | Status | What to do |
 |---|---|---|
-| Deployed and working on Arc mainnet at the time you submit | Mostly done | The web app is live and reads Arc mainnet. RiskAttestation is deployed at `0x5984e03F045AEE669444eA69b0f3869A02535054` (its code on chain matches this repo's build). Still to do: set `ATTESTATION_CONTRACT` in Render, and make one real payment and one saved check on mainnet. |
+| Deployed and working on Arc mainnet at the time you submit | Done | The web app is live and reads Arc mainnet. RiskAttestation is deployed at `0x5984e03F045AEE669444eA69b0f3869A02535054` (its code on chain matches this repo's build), and the live app is set to use it (checked through `/api/config` and a live check). Not yet done: a real payment and a saved check from a browser wallet on mainnet. The rules do not ask for one, but a reviewer may try it. |
 | A live deployment with a link reviewers can open | Done | https://arc-safe-send.onrender.com (checked: `/healthz` answers and the three examples give live Arc results). |
 | A public repo | Done | https://github.com/MelvTheGoat/web3-risk-mcp (everything is on `main`). |
 | A short description of what it does and what it uses Arc for | Done | Section 1 above. |
